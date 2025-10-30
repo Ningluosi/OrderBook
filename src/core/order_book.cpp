@@ -38,6 +38,64 @@ bool OrderBook::cancelOrder(uint64_t orderId) {
     return true;
 }
 
+void OrderBook::matchOrder(Side side, double price, uint32_t qty) {
+    std::cout << "New " << ((side == Side::BUY) ? "BUY" : "SELL")
+              << " order: price=" << price << " qty=" << qty << std::endl;
+
+    uint32_t remaining = qty;
+    auto& opposite = (side == Side::BUY) ? asks_ : bids_;
+
+    auto priceCmp = (side == Side::BUY)
+    ? [](double bidPrice, double askPrice){ return bidPrice >= askPrice; }
+    : [](double askPrice, double bidPrice){ return askPrice <= bidPrice; };
+
+    while (remaining > 0 && !opposite.empty()) {
+        double bestPrice = (side == Side::BUY)
+            ? std::min_element(opposite.begin(), opposite.end(),
+                [](auto& a, auto& b){ return a.first < b.first; })->first
+            : std::max_element(opposite.begin(), opposite.end(),
+                [](auto& a, auto& b){ return a.first < b.first; })->first;
+
+        if (!priceCmp(price, bestPrice)) break;
+
+        PriceLevel& level = opposite[bestPrice];
+        Order* maker = level.head;
+
+        while (maker && remaining > 0) {
+            uint32_t tradedQty = std::min(remaining, maker->quantity);
+            double tradePrice = maker->price;
+
+            executeTrade(nullptr, maker, tradedQty, tradePrice);
+
+            maker->quantity -= tradedQty;
+            remaining -= tradedQty;
+            level.totalQty -= tradedQty;
+
+            if (maker->quantity == 0) {
+                Order* next = maker->next;
+                cancelOrder(maker->orderId);
+                maker = next;
+            } else {
+                maker = maker->next;
+            }
+        }
+
+        if (level.empty()) opposite.erase(bestPrice);
+    }
+
+    if (remaining > 0) {
+        addOrder(side, price, remaining);
+        std::cout << "Unfilled qty=" << remaining << " added to book.\n";
+    }
+
+    updateBestPrices();
+}
+
+void OrderBook::executeTrade(Order* taker, Order* maker, uint32_t tradedQty, double tradePrice) {
+    std::cout << "TRADE: " << tradedQty << " @ " << tradePrice
+              << " (maker#" << maker->orderId << ")\n";
+}
+
 void OrderBook::updateBestPrices() {
     bestBid_ = 0.0;
     bestAsk_ = std::numeric_limits<double>::max();

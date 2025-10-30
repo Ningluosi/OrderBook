@@ -17,9 +17,26 @@ void testAddAndCancel() {
     book.printSnapshot();
 }
 
+void testMatchOrder() {
+    OrderBook book(10000);
+
+    book.addOrder(Side::SELL, 101.0, 10);
+    book.addOrder(Side::SELL, 102.0, 10);
+    book.addOrder(Side::BUY,  99.0, 10);
+    book.addOrder(Side::BUY,  98.0, 10);
+    book.printSnapshot();
+
+    book.matchOrder(Side::BUY, 102.0, 15);
+    book.printSnapshot();
+
+    book.matchOrder(Side::SELL, 99.0, 20);
+    book.printSnapshot();
+}
+
 int main() {
     std::cout << "Running OrderBook Tests..." << std::endl;
     testAddAndCancel();
+    testMatchOrder();
     std::cout << "All tests passed." << std::endl;
     return 0;
 }

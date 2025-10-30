@@ -11,11 +11,10 @@ class OrderBook {
 public:
     explicit OrderBook(size_t poolSize = 100000);
 
-    // 下单与撤单
     Order* addOrder(Side side, double price, uint32_t qty);
     bool cancelOrder(uint64_t orderId);
+    void matchOrder(Side side, double price, uint32_t qty);
 
-    // 打印快照
     void printSnapshot(size_t depth = 5) const;
 
 private:
@@ -30,4 +29,5 @@ private:
     double bestAsk_ = std::numeric_limits<double>::max();
 
     void updateBestPrices();
+    void executeTrade(Order* taker, Order* maker, uint32_t tradedQty, double tradePrice);
 };
