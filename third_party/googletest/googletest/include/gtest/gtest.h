@@ -51,6 +51,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <iomanip>
 #include <limits>
 #include <memory>
 #include <ostream>
@@ -60,16 +61,16 @@
 #include <type_traits>
 #include <vector>
 
-#include "gtest/gtest-assertion-result.h"  // IWYU pragma: export
-#include "gtest/gtest-death-test.h"  // IWYU pragma: export
-#include "gtest/gtest-matchers.h"  // IWYU pragma: export
-#include "gtest/gtest-message.h"  // IWYU pragma: export
-#include "gtest/gtest-param-test.h"  // IWYU pragma: export
-#include "gtest/gtest-printers.h"  // IWYU pragma: export
-#include "gtest/gtest-test-part.h"  // IWYU pragma: export
-#include "gtest/gtest-typed-test.h"  // IWYU pragma: export
-#include "gtest/gtest_pred_impl.h"  // IWYU pragma: export
-#include "gtest/gtest_prod.h"  // IWYU pragma: export
+#include "gtest/gtest-assertion-result.h"
+#include "gtest/gtest-death-test.h"
+#include "gtest/gtest-matchers.h"
+#include "gtest/gtest-message.h"
+#include "gtest/gtest-param-test.h"
+#include "gtest/gtest-printers.h"
+#include "gtest/gtest-test-part.h"
+#include "gtest/gtest-typed-test.h"
+#include "gtest/gtest_pred_impl.h"
+#include "gtest/gtest_prod.h"
 #include "gtest/internal/gtest-internal.h"
 #include "gtest/internal/gtest-string.h"
 
@@ -607,7 +608,7 @@ class GTEST_API_ TestInfo {
   friend class internal::UnitTestImpl;
   friend class internal::StreamingListenerTest;
   friend TestInfo* internal::MakeAndRegisterTestInfo(
-      std::string test_suite_name, const char* name, const char* type_param,
+      const char* test_suite_name, const char* name, const char* type_param,
       const char* value_param, internal::CodeLocation code_location,
       internal::TypeId fixture_class_id, internal::SetUpTestSuiteFunc set_up_tc,
       internal::TearDownTestSuiteFunc tear_down_tc,
@@ -615,7 +616,7 @@ class GTEST_API_ TestInfo {
 
   // Constructs a TestInfo object. The newly constructed instance assumes
   // ownership of the factory object.
-  TestInfo(std::string test_suite_name, std::string name,
+  TestInfo(const std::string& test_suite_name, const std::string& name,
            const char* a_type_param,   // NULL if not a type-parameterized test
            const char* a_value_param,  // NULL if not a value-parameterized test
            internal::CodeLocation a_code_location,
@@ -683,7 +684,7 @@ class GTEST_API_ TestSuite {
   //                 this is not a type-parameterized test.
   //   set_up_tc:    pointer to the function that sets up the test suite
   //   tear_down_tc: pointer to the function that tears down the test suite
-  TestSuite(const std::string& name, const char* a_type_param,
+  TestSuite(const char* name, const char* a_type_param,
             internal::SetUpTestSuiteFunc set_up_tc,
             internal::TearDownTestSuiteFunc tear_down_tc);
 
@@ -1123,7 +1124,7 @@ class GTEST_API_ UnitTest {
   // This method can only be called from the main thread.
   //
   // INTERNAL IMPLEMENTATION - DO NOT USE IN A USER PROGRAM.
-  [[nodiscard]] int Run();
+  int Run() GTEST_MUST_USE_RESULT_;
 
   // Returns the working directory when the first TEST() or TEST_F()
   // was executed.  The UnitTest object owns the string.
@@ -1262,20 +1263,6 @@ class GTEST_API_ UnitTest {
   // total_test_suite_count() - 1. If i is not in that range, returns NULL.
   TestSuite* GetMutableTestSuite(int i);
 
-  // Invokes OsStackTrackGetterInterface::UponLeavingGTest. UponLeavingGTest()
-  // should be called immediately before Google Test calls user code. It saves
-  // some information about the current stack that CurrentStackTrace() will use
-  // to find and hide Google Test stack frames.
-  void UponLeavingGTest();
-
-  // Sets the TestSuite object for the test that's currently running.
-  void set_current_test_suite(TestSuite* a_current_test_suite)
-      GTEST_LOCK_EXCLUDED_(mutex_);
-
-  // Sets the TestInfo object for the test that's currently running.
-  void set_current_test_info(TestInfo* a_current_test_info)
-      GTEST_LOCK_EXCLUDED_(mutex_);
-
   // Accessors for the implementation object.
   internal::UnitTestImpl* impl() { return impl_; }
   const internal::UnitTestImpl* impl() const { return impl_; }
@@ -1284,8 +1271,6 @@ class GTEST_API_ UnitTest {
   // members of UnitTest.
   friend class ScopedTrace;
   friend class Test;
-  friend class TestInfo;
-  friend class TestSuite;
   friend class internal::AssertHelper;
   friend class internal::StreamingListenerTest;
   friend class internal::UnitTestRecordPropertyTestHelper;
@@ -1589,12 +1574,12 @@ AssertionResult CmpHelperFloatingPointEQ(const char* lhs_expression,
   }
 
   ::std::stringstream lhs_ss;
-  lhs_ss.precision(std::numeric_limits<RawType>::digits10 + 2);
-  lhs_ss << lhs_value;
+  lhs_ss << std::setprecision(std::numeric_limits<RawType>::digits10 + 2)
+         << lhs_value;
 
   ::std::stringstream rhs_ss;
-  rhs_ss.precision(std::numeric_limits<RawType>::digits10 + 2);
-  rhs_ss << rhs_value;
+  rhs_ss << std::setprecision(std::numeric_limits<RawType>::digits10 + 2)
+         << rhs_value;
 
   return EqFailure(lhs_expression, rhs_expression,
                    StringStreamToString(&lhs_ss), StringStreamToString(&rhs_ss),
@@ -1610,8 +1595,6 @@ GTEST_API_ AssertionResult DoubleNearPredFormat(const char* expr1,
                                                 double val1, double val2,
                                                 double abs_error);
 
-using GoogleTest_NotSupported_OnFunctionReturningNonVoid = void;
-
 // INTERNAL IMPLEMENTATION - DO NOT USE IN USER CODE.
 // A class that enables one to stream messages to assertion macros
 class GTEST_API_ AssertHelper {
@@ -1623,8 +1606,7 @@ class GTEST_API_ AssertHelper {
 
   // Message assignment is a semantic trick to enable assertion
   // streaming; see the GTEST_MESSAGE_ macro below.
-  GoogleTest_NotSupported_OnFunctionReturningNonVoid operator=(
-      const Message& message) const;
+  void operator=(const Message& message) const;
 
  private:
   // We put our data in a struct so that the size of the AssertHelper class can
@@ -1696,7 +1678,7 @@ class WithParamInterface {
 
   // The current parameter value. Is also available in the test fixture's
   // constructor.
-  [[nodiscard]] static const ParamType& GetParam() {
+  static const ParamType& GetParam() {
     GTEST_CHECK_(parameter_ != nullptr)
         << "GetParam() can only be called inside a value-parameterized test "
         << "-- did you intend to write TEST_P instead of TEST_F?";
@@ -1770,7 +1752,6 @@ class TestWithParam : public Test, public WithParamInterface<T> {};
 // generic name and clashes with some other libraries.
 #if !(defined(GTEST_DONT_DEFINE_FAIL) && GTEST_DONT_DEFINE_FAIL)
 #define FAIL() GTEST_FAIL()
-#define FAIL_AT(file, line) GTEST_FAIL_AT(file, line)
 #endif
 
 // Generates a success with a generic message.
@@ -2327,12 +2308,11 @@ TestInfo* RegisterTest(const char* test_suite_name, const char* test_name,
 // tests are successful, or 1 otherwise.
 //
 // RUN_ALL_TESTS() should be invoked after the command line has been
-// parsed by InitGoogleTest(). RUN_ALL_TESTS will tear down and delete any
-// installed environments and should only be called once per binary.
+// parsed by InitGoogleTest().
 //
 // This function was formerly a macro; thus, it is in the global
 // namespace and has an all-caps name.
-[[nodiscard]] int RUN_ALL_TESTS();
+int RUN_ALL_TESTS() GTEST_MUST_USE_RESULT_;
 
 inline int RUN_ALL_TESTS() { return ::testing::UnitTest::GetInstance()->Run(); }
 

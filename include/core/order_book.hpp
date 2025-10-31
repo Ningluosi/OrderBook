@@ -17,6 +17,13 @@ public:
 
     void printSnapshot(size_t depth = 5) const;
 
+    const std::unordered_map<double, PriceLevel>& bids() const noexcept { return bids_; }
+    const std::unordered_map<double, PriceLevel>& asks() const noexcept { return asks_; }
+    const std::unordered_map<uint64_t, Order*>& orderIndex() const noexcept { return orderIndex_; }
+
+    double bestBid() const noexcept { return bestBid_; }
+    double bestAsk() const noexcept { return bestAsk_; }
+
 private:
     uint64_t nextOrderId_ = 1;
     OrderPool pool_;

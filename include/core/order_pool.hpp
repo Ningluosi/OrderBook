@@ -4,7 +4,6 @@
 #include <stack>
 #include <stdexcept>
 
-// 简单对象池实现，预分配固定数量 Order
 class OrderPool {
 public:
     explicit OrderPool(size_t capacity = 100000) {

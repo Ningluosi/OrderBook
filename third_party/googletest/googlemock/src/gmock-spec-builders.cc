@@ -293,7 +293,7 @@ void ReportUninterestingCall(CallReaction reaction, const std::string& msg) {
       Log(kWarning,
           msg +
               "\nNOTE: You can safely ignore the above warning unless this "
-              "call should not happen.  Do not suppress it by adding "
+              "call should not happen.  Do not suppress it by blindly adding "
               "an EXPECT_CALL() if you don't mean to enforce the call.  "
               "See "
               "https://github.com/google/googletest/blob/main/docs/"
@@ -436,9 +436,9 @@ bool UntypedFunctionMockerBase::VerifyAndClearExpectationsLocked()
   UntypedExpectations expectations_to_delete;
   untyped_expectations_.swap(expectations_to_delete);
 
-  g_gmock_mutex.unlock();
+  g_gmock_mutex.Unlock();
   expectations_to_delete.clear();
-  g_gmock_mutex.lock();
+  g_gmock_mutex.Lock();
 
   return expectations_met;
 }
@@ -490,7 +490,6 @@ class MockObjectRegistry {
   // failure, unless the user explicitly asked us to ignore it.
   ~MockObjectRegistry() {
     if (!GMOCK_FLAG_GET(catch_leaked_mocks)) return;
-    internal::MutexLock l(&internal::g_gmock_mutex);
 
     int leaked_count = 0;
     for (StateMap::const_iterator it = states_.begin(); it != states_.end();
@@ -531,7 +530,7 @@ class MockObjectRegistry {
 #ifdef GTEST_OS_QURT
       qurt_exception_raise_fatal();
 #else
-      _Exit(1);  // We cannot call exit() as it is not reentrant and
+      _exit(1);  // We cannot call exit() as it is not reentrant and
                  // may already have been called.
 #endif
     }

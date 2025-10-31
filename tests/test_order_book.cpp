@@ -1,42 +1,55 @@
+#include <gtest/gtest.h>
 #include "core/order_book.hpp"
-#include <iostream>
-#include <cassert>
 
-void testAddAndCancel() {
-    OrderBook book(1000);
+class OrderBookTest : public ::testing::Test {
+protected:
+    OrderBook book{10000};
+
+    void SetUp() override {
+        book.addOrder(Side::SELL, 101.0, 10);
+        book.addOrder(Side::SELL, 102.0, 10);
+        book.addOrder(Side::BUY,  99.0,  10);
+        book.addOrder(Side::BUY,  98.0,  10);
+    }
+};
+
+
+TEST_F(OrderBookTest, FullMatchBuyOrder) {
+    book.matchOrder(Side::BUY, 102.0, 25);
+
+    EXPECT_TRUE(book.asks().empty());
+    EXPECT_EQ(book.bids().size(), 3);
+}
+
+TEST_F(OrderBookTest, PartialMatchBuyOrder) {
+    book.matchOrder(Side::BUY, 101.0, 5);
+
+    auto it = book.asks().find(101.0);
+    ASSERT_NE(it, book.asks().end());
+    EXPECT_EQ(it->second.totalQty, 5);
+}
+
+TEST_F(OrderBookTest, AddBuyOrderBelowBestAsk) {
+    book.matchOrder(Side::BUY, 100.0, 8);
+
+    auto it = book.bids().find(100.0);
+    ASSERT_NE(it, book.bids().end());
+    EXPECT_EQ(it->second.totalQty, 8);
+}
+
+TEST_F(OrderBookTest, FIFOWithinSamePriceLevel) {
     auto* o1 = book.addOrder(Side::BUY, 100.5, 10);
-    auto* o2 = book.addOrder(Side::BUY, 99.8, 20);
-    auto* o3 = book.addOrder(Side::SELL, 101.2, 15);
+    auto* o2 = book.addOrder(Side::BUY, 100.5, 20);
 
-    std::cout << "[TEST] After adding 3 orders:" << std::endl;
-    book.printSnapshot();
+    book.matchOrder(Side::SELL, 100.5, 15);
 
-    assert(o1 && o2 && o3);
-    assert(book.cancelOrder(o2->orderId));
-    std::cout << "[TEST] After canceling orderId=" << o2->orderId << std::endl;
-    book.printSnapshot();
+    EXPECT_EQ(o1->quantity, 0);
+    EXPECT_EQ(o2->quantity, 15);
 }
 
-void testMatchOrder() {
-    OrderBook book(10000);
+TEST_F(OrderBookTest, BestPriceUpdatesAfterMatch) {
+    book.matchOrder(Side::BUY, 101.0, 10);
 
-    book.addOrder(Side::SELL, 101.0, 10);
-    book.addOrder(Side::SELL, 102.0, 10);
-    book.addOrder(Side::BUY,  99.0, 10);
-    book.addOrder(Side::BUY,  98.0, 10);
-    book.printSnapshot();
-
-    book.matchOrder(Side::BUY, 102.0, 15);
-    book.printSnapshot();
-
-    book.matchOrder(Side::SELL, 99.0, 20);
-    book.printSnapshot();
-}
-
-int main() {
-    std::cout << "Running OrderBook Tests..." << std::endl;
-    testAddAndCancel();
-    testMatchOrder();
-    std::cout << "All tests passed." << std::endl;
-    return 0;
+    EXPECT_DOUBLE_EQ(book.bestAsk(), 102.0);
+    EXPECT_DOUBLE_EQ(book.bestBid(), 99.0);
 }

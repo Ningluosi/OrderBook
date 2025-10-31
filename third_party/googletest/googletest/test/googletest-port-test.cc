@@ -288,15 +288,15 @@ TEST(FormatCompilerIndependentFileLocationTest, FormatsUknownFileAndLine) {
     defined(GTEST_OS_OPENBSD) || defined(GTEST_OS_GNU_HURD)
 void* ThreadFunc(void* data) {
   internal::Mutex* mutex = static_cast<internal::Mutex*>(data);
-  mutex->lock();
-  mutex->unlock();
+  mutex->Lock();
+  mutex->Unlock();
   return nullptr;
 }
 
 TEST(GetThreadCountTest, ReturnsCorrectValue) {
   size_t starting_count;
   size_t thread_count_after_create;
-  size_t thread_count_after_join = 0;
+  size_t thread_count_after_join;
 
   // We can't guarantee that no other thread was created or destroyed between
   // any two calls to GetThreadCount(). We make multiple attempts, hoping that
@@ -316,9 +316,9 @@ TEST(GetThreadCountTest, ReturnsCorrectValue) {
       const int status = pthread_create(&thread_id, &attr, &ThreadFunc, &mutex);
       ASSERT_EQ(0, pthread_attr_destroy(&attr));
       ASSERT_EQ(0, status);
-
-      thread_count_after_create = GetThreadCount();
     }
+
+    thread_count_after_create = GetThreadCount();
 
     void* dummy;
     ASSERT_EQ(0, pthread_join(thread_id, &dummy));

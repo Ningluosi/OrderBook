@@ -67,10 +67,10 @@ namespace testing {
 // To implement a matcher Foo for type T, define:
 //   1. a class FooMatcherMatcher that implements the matcher interface:
 //     using is_gtest_matcher = void;
-//     bool MatchAndExplain(const T&, std::ostream*) const;
+//     bool MatchAndExplain(const T&, std::ostream*);
 //       (MatchResultListener* can also be used instead of std::ostream*)
-//     void DescribeTo(std::ostream*) const;
-//     void DescribeNegationTo(std::ostream*) const;
+//     void DescribeTo(std::ostream*);
+//     void DescribeNegationTo(std::ostream*);
 //
 //   2. a factory function that creates a Matcher<T> object from a
 //      FooMatcherMatcher.
@@ -296,12 +296,12 @@ class MatcherBase : private MatcherDescriberInterface {
     return *this;
   }
 
-  MatcherBase(MatcherBase&& other) noexcept
+  MatcherBase(MatcherBase&& other)
       : vtable_(other.vtable_), buffer_(other.buffer_) {
     other.vtable_ = nullptr;
   }
 
-  MatcherBase& operator=(MatcherBase&& other) noexcept {
+  MatcherBase& operator=(MatcherBase&& other) {
     if (this == &other) return *this;
     Destroy();
     vtable_ = other.vtable_;
@@ -771,35 +771,6 @@ class GeMatcher
       : ComparisonBase<GeMatcher<Rhs>, Rhs, std::greater_equal<>>(rhs) {}
   static const char* Desc() { return "is >="; }
   static const char* NegatedDesc() { return "isn't >="; }
-};
-
-// Same as `EqMatcher<Rhs>`, except that the `rhs` is stored as `StoredRhs` and
-// must be implicitly convertible to `Rhs`.
-template <typename Rhs, typename StoredRhs>
-class ImplicitCastEqMatcher {
- public:
-  explicit ImplicitCastEqMatcher(const StoredRhs& rhs) : stored_rhs_(rhs) {}
-
-  using is_gtest_matcher = void;
-
-  template <typename Lhs>
-  bool MatchAndExplain(const Lhs& lhs, std::ostream*) const {
-    return lhs == rhs();
-  }
-
-  void DescribeTo(std::ostream* os) const {
-    *os << "is equal to ";
-    UniversalPrint(rhs(), os);
-  }
-  void DescribeNegationTo(std::ostream* os) const {
-    *os << "isn't equal to ";
-    UniversalPrint(rhs(), os);
-  }
-
- private:
-  Rhs rhs() const { return ImplicitCast_<Rhs>(stored_rhs_); }
-
-  StoredRhs stored_rhs_;
 };
 
 template <typename T, typename = typename std::enable_if<

@@ -9,7 +9,6 @@ struct Order {
     double price = 0.0;
     uint32_t quantity = 0;
 
-    // linked list pointer
     Order* next = nullptr;
     Order* prev = nullptr;
 };
