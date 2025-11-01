@@ -1,8 +1,10 @@
 #pragma once
-#include "order.h"
+#include "core/order.h"
 #include <vector>
 #include <stack>
 #include <stdexcept>
+
+namespace core {
 
 class OrderPool {
 public:
@@ -28,3 +30,5 @@ private:
     std::vector<Order> pool_;
     std::stack<Order*> freeList_;
 };
+
+}

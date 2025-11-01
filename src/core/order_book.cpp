@@ -2,6 +2,10 @@
 #include "utils/logger.h"
 #include <algorithm>
 
+using namespace utils;
+
+namespace core {
+
 OrderBook::OrderBook(size_t poolSize) : pool_(poolSize) {}
 
 Order* OrderBook::addOrder(Side side, double price, uint32_t qty) {
@@ -167,4 +171,6 @@ void OrderBook::printSnapshot(size_t depth) const {
                   << std::setw(15) << aq << std::endl;
     }
     std::cout << "=============================\n" << std::endl;
+}
+
 }

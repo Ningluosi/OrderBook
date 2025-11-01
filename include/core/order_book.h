@@ -1,11 +1,13 @@
 #pragma once
-#include "order_pool.h"
-#include "price_level.h"
+#include "core/order_pool.h"
+#include "core/price_level.h"
 #include <unordered_map>
 #include <iostream>
 #include <iomanip>
 #include <string>
 #include <limits>
+
+namespace core {
 
 class OrderBook {
 public:
@@ -38,3 +40,5 @@ private:
     void updateBestPrices();
     void executeTrade(Order* taker, Order* maker, uint32_t tradedQty, double tradePrice);
 };
+
+}

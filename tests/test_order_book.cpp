@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include "core/order_book.h"
 
+using namespace core;
+
 class OrderBookTest : public ::testing::Test {
 protected:
     OrderBook book{10000};

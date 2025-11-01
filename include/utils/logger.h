@@ -10,6 +10,8 @@
 #endif
 
 
+namespace utils {
+
 class Logger {
 public:
     static Logger& instance();
@@ -32,6 +34,8 @@ private:
 
     std::string timestamp();
 };
+
+}
 
 #define LOG_ERROR(msg) do { if (LOG_LEVEL >= 1) Logger::instance().error(msg); } while(0)
 #define LOG_WARN(msg)  do { if (LOG_LEVEL >= 2)  Logger::instance().warn(msg);  } while(0)

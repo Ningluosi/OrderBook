@@ -1,4 +1,6 @@
-#include "logger.h"
+#include "utils/logger.h"
+
+namespace utils {
 
 Logger& Logger::instance() {
     static Logger inst;
@@ -44,4 +46,6 @@ std::string Logger::timestamp() {
     char buf[32];
     std::strftime(buf, sizeof(buf), "%F %T", std::localtime(&t));
     return std::string(buf);
+}
+
 }

@@ -1,6 +1,8 @@
 #pragma once
 #include <cstdint>
 
+namespace core {
+
 enum class Side { BUY, SELL };
 
 struct Order {
@@ -12,3 +14,5 @@ struct Order {
     Order* next = nullptr;
     Order* prev = nullptr;
 };
+
+}

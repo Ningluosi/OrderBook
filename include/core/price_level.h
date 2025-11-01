@@ -1,6 +1,8 @@
 #pragma once
-#include "order.h"
+#include "core/order.h"
 #include <cstdint>
+
+namespace core {
 
 struct PriceLevel {
     double price = 0.0;
@@ -27,3 +29,5 @@ struct PriceLevel {
 
     bool empty() const { return head == nullptr; }
 };
+
+}
