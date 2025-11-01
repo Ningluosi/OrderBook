@@ -15,7 +15,7 @@ Order* OrderBook::addOrder(Side side, double price, uint32_t qty) {
     order->price = price;
     order->quantity = qty;
 
-    LOG_INFO("ADD " + std::string(side == Side::BUY ? "BUY " : "SELL ") +
+    LOG_INFO("[OrderBook] ADD " + std::string(side == Side::BUY ? "BUY " : "SELL ") +
             "id=" + std::to_string(order->orderId) +
             " price=" + std::to_string(price) +
             " qty=" + std::to_string(qty));
@@ -33,7 +33,7 @@ Order* OrderBook::addOrder(Side side, double price, uint32_t qty) {
 bool OrderBook::cancelOrder(uint64_t orderId) {
     auto it = orderIndex_.find(orderId);
     if (it == orderIndex_.end()) {
-        LOG_WARN("CANCEL FAIL: order#" + std::to_string(orderId) + " not found");
+        LOG_WARN("[OrderBook] CANCEL FAIL: order#" + std::to_string(orderId) + " not found");
         return false;
     }
 
@@ -41,12 +41,12 @@ bool OrderBook::cancelOrder(uint64_t orderId) {
     auto& book = (order->side == Side::BUY) ? bids_ : asks_;
     auto levelIt = book.find(order->price);
     if (levelIt == book.end()) {
-        LOG_ERROR("CANCEL FAIL: price level " + std::to_string(order->price) +
+        LOG_ERROR("[OrderBook] CANCEL FAIL: price level " + std::to_string(order->price) +
             " missing for order#" + std::to_string(orderId));
         return false;
     }
 
-    LOG_INFO("CANCEL order#" + std::to_string(orderId));
+    LOG_INFO("[OrderBook] CANCEL order#" + std::to_string(orderId));
 
     levelIt->second.remove(order);
     if (levelIt->second.empty()) book.erase(levelIt);

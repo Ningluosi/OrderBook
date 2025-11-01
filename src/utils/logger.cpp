@@ -13,6 +13,12 @@ void Logger::setLogFile(const std::string& filename) {
     toFile_ = true;
 }
 
+void Logger::disableFileLogging() {
+    std::lock_guard<std::mutex> lock(mtx_);
+    if (file_.is_open()) file_.close();
+    toFile_ = false;
+}
+
 void Logger::info(const std::string& msg) {
     std::lock_guard<std::mutex> lock(mtx_);
     std::string line = "[" + timestamp() + "][INFO] " + msg + "\n";
