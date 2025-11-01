@@ -5,6 +5,5 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(include)
 
-# 子目录模块
 add_subdirectory(src)
 add_subdirectory(tests)

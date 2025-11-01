@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "core/order_book.hpp"
+#include "core/order_book.h"
 
 class OrderBookTest : public ::testing::Test {
 protected:

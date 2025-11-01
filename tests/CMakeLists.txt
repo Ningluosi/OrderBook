@@ -1,4 +1,3 @@
-# tests/CMakeLists.txt
 cmake_minimum_required(VERSION 3.10)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/googletest googletest_build)
@@ -15,8 +14,7 @@ target_include_directories(orderbook_tests PRIVATE
 
 target_link_libraries(orderbook_tests PRIVATE gtest gtest_main)
 
-# ✅ 必须是这个目标
-# target_compile_definitions(orderbook_tests PRIVATE UNIT_TEST)
+target_compile_definitions(orderbook_tests PRIVATE LOG_LEVEL=0)
 
 include(GoogleTest)
 gtest_discover_tests(orderbook_tests)
