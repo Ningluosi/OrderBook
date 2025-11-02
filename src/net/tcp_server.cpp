@@ -15,9 +15,9 @@ TcpServer::TcpServer(EpollReactor& reactor, const std::string& host, uint16_t po
     }
 }
 
-bool TcpServer::start() {
+bool TcpServer::startListening() {
     LOG_INFO("[TcpServer] Listening for connections...");
-    reactor_.addFd(listenFd_, EPOLLIN, [this](int fd, uint32_t events) {
+    reactor_.registerEventHandler(listenFd_, EPOLLIN, [this](int fd, uint32_t events) {
         handleAccept(fd, events);
     });
     return true;
@@ -37,7 +37,7 @@ void TcpServer::handleAccept(int listenFd, uint32_t) {
     }
 
     conns_.emplace(connFd, TcpConnection(connFd));
-    reactor_.addFd(connFd, EPOLLIN, [this](int fd, uint32_t events) {
+    reactor_.registerEventHandler(connFd, EPOLLIN, [this](int fd, uint32_t events) {
         handleRead(fd, events);
     });
 
@@ -53,7 +53,7 @@ void TcpServer::handleRead(int clientFd, uint32_t) {
     auto data = it->second.read();
     if (data.empty()) {
         LOG_INFO("[TcpServer] Connection closed, fd=" + std::to_string(clientFd));
-        reactor_.delFd(clientFd);
+        reactor_.unregisterEventHandler(clientFd);
         conns_.erase(it);
         return;
     }

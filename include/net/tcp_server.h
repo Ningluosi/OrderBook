@@ -14,7 +14,7 @@ public:
     TcpServer(EpollReactor& reactor, const std::string& host, uint16_t port);
     ~TcpServer();
 
-    bool start();
+    bool startListening();
     void setMessageHandler(const MessageCallback& cb) { msgCallback_ = cb; }
 
 private:

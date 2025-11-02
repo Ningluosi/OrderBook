@@ -23,7 +23,7 @@ EpollReactor::~EpollReactor() {
     if (epfd_ >= 0) close(epfd_);
 }
 
-bool EpollReactor::addFd(int fd, uint32_t events, const EventCallback& cb) {
+bool EpollReactor::registerEventHandler(int fd, uint32_t events, const EventCallback& cb) {
     struct epoll_event ev{};
     ev.events = events;
     ev.data.fd = fd;
@@ -35,14 +35,14 @@ bool EpollReactor::addFd(int fd, uint32_t events, const EventCallback& cb) {
     return true;
 }
 
-bool EpollReactor::modFd(int fd, uint32_t events) {
+bool EpollReactor::updateEventMask(int fd, uint32_t events) {
     struct epoll_event ev{};
     ev.events = events;
     ev.data.fd = fd;
     return epoll_ctl(epfd_, EPOLL_CTL_MOD, fd, &ev) == 0;
 }
 
-bool EpollReactor::delFd(int fd) {
+bool EpollReactor::unregisterEventHandler(int fd) {
     if (epoll_ctl(epfd_, EPOLL_CTL_DEL, fd, nullptr) < 0) {
         LOG_ERROR("[EpollReactor] epoll_ctl DEL failed: " + std::string(std::strerror(errno)));
         return false;
@@ -51,7 +51,7 @@ bool EpollReactor::delFd(int fd) {
     return true;
 }
 
-void EpollReactor::run() {
+void EpollReactor::runEventLoop() {
     running_ = true;
     while (running_) {
         int n = epoll_wait(epfd_, events_.data(), static_cast<int>(events_.size()), timeoutMs_);
@@ -81,6 +81,6 @@ void EpollReactor::run() {
     }
 }
 
-void EpollReactor::stop() { running_ = false; }
+void EpollReactor::stopEventLoop() { running_ = false; }
 
 }
