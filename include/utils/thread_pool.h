@@ -18,6 +18,17 @@ public:
     void shutdown();
     bool submitTask(std::function<void()> fn);
 
+    template<typename F>
+    bool submitTask(F&& fn) {
+        if (!poolRunning_) return false;
+        {
+            std::lock_guard<std::mutex> lock(mtx_);
+            tasks_.emplace(std::forward<F>(fn));
+        }
+        cv_.notify_one();
+        return true;
+    }
+
 private:
     void runWorkerLoop();
 

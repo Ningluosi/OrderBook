@@ -25,16 +25,6 @@ void ThreadPool::shutdown() {
     }
 }
 
-bool ThreadPool::submitTask(std::function<void()> fn) {
-    if (!poolRunning_) return false;
-    {
-        std::lock_guard<std::mutex> lock(mtx_);
-        tasks_.push(std::move(fn));
-    }
-    cv_.notify_one();
-    return true;
-}
-
 void ThreadPool::runWorkerLoop() {
     while (true) {
         std::function<void()> taskFn;
