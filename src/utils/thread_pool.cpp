@@ -11,14 +11,14 @@ ThreadPool::ThreadPool(size_t nThreads)
 ThreadPool::~ThreadPool() { shutdown(); }
 
 void ThreadPool::startWorkers() {
-    if (running_.exchange(true)) return;
+    if (poolRunning_.exchange(true)) return;
     for (auto &t : workers_) {
         t = std::thread([this]{ runWorkerLoop(); });
     }
 }
 
 void ThreadPool::shutdown() {
-    if (!running_.exchange(false)) return;
+    if (!poolRunning_.exchange(false)) return;
     cv_.notify_all();
     for (auto &t : workers_) {
         if (t.joinable()) t.join();
@@ -26,7 +26,7 @@ void ThreadPool::shutdown() {
 }
 
 bool ThreadPool::submitTask(std::function<void()> fn) {
-    if (!running_) return false;
+    if (!poolRunning_) return false;
     {
         std::lock_guard<std::mutex> lock(mtx_);
         tasks_.push(std::move(fn));
@@ -40,8 +40,8 @@ void ThreadPool::runWorkerLoop() {
         std::function<void()> taskFn;
         {
             std::unique_lock<std::mutex> lock(mtx_);
-            cv_.wait(lock, [&]{ return !running_ || !tasks_.empty(); });
-            if (!running_ && tasks_.empty()) break;
+            cv_.wait(lock, [&]{ return !poolRunning_ || !tasks_.empty(); });
+            if (!poolRunning_ && tasks_.empty()) break;
             taskFn = std::move(tasks_.front());
             tasks_.pop();
         }

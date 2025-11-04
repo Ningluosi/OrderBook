@@ -19,7 +19,7 @@ public:
 private:
     int epfd_ = -1;
     int timeoutMs_ = -1;
-    bool running_ = false;
+    bool reactorRunning_ = false;
     std::vector<struct epoll_event> events_;
 };
 

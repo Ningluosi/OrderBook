@@ -26,7 +26,7 @@ private:
     std::queue<std::function<void()>> tasks_;
     std::mutex mtx_;
     std::condition_variable cv_;
-    std::atomic<bool> running_{false};
+    std::atomic<bool> poolRunning_{false};
 };
 
 }

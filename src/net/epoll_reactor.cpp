@@ -52,8 +52,8 @@ bool EpollReactor::unregisterEventHandler(int fd) {
 }
 
 void EpollReactor::runEventLoop() {
-    running_ = true;
-    while (running_) {
+    reactorRunning_ = true;
+    while (reactorRunning_) {
         int n = epoll_wait(epfd_, events_.data(), static_cast<int>(events_.size()), timeoutMs_);
 
         if (n == (int)events_.size()) events_.resize(events_.size() * 2);
@@ -81,6 +81,6 @@ void EpollReactor::runEventLoop() {
     }
 }
 
-void EpollReactor::stopEventLoop() { running_ = false; }
+void EpollReactor::stopEventLoop() { reactorRunning_ = false; }
 
 }
