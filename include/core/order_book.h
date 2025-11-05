@@ -28,7 +28,7 @@ public:
 
 private:
     uint64_t nextOrderId_ = 1;
-    OrderPool pool_;
+    OrderPool orderPool_;
 
     std::unordered_map<double, PriceLevel> bids_;
     std::unordered_map<double, PriceLevel> asks_;

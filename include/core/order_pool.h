@@ -9,8 +9,8 @@ namespace core {
 class OrderPool {
 public:
     explicit OrderPool(size_t capacity = 100000) {
-        pool_.resize(capacity);
-        for (size_t i = 0; i < capacity; ++i) freeList_.push(&pool_[i]);
+        orderPool_.resize(capacity);
+        for (size_t i = 0; i < capacity; ++i) freeList_.push(&orderPool_[i]);
     }
 
     Order* allocate() {
@@ -27,7 +27,7 @@ public:
     }
 
 private:
-    std::vector<Order> pool_;
+    std::vector<Order> orderPool_;
     std::stack<Order*> freeList_;
 };
 

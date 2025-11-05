@@ -6,10 +6,10 @@ using namespace utils;
 
 namespace core {
 
-OrderBook::OrderBook(size_t poolSize) : pool_(poolSize) {}
+OrderBook::OrderBook(size_t poolSize) : orderPool_(poolSize) {}
 
 Order* OrderBook::addOrder(Side side, double price, uint32_t qty) {
-    Order* order = pool_.allocate();
+    Order* order = orderPool_.allocate();
     order->orderId = nextOrderId_++;
     order->side = side;
     order->price = price;
@@ -51,7 +51,7 @@ bool OrderBook::cancelOrder(uint64_t orderId) {
     levelIt->second.remove(order);
     if (levelIt->second.empty()) book.erase(levelIt);
 
-    pool_.deallocate(order);
+    orderPool_.deallocate(order);
     orderIndex_.erase(it);
     updateBestPrices();
     return true;
