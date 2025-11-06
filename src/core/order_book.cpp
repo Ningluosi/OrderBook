@@ -6,7 +6,8 @@ using namespace utils;
 
 namespace core {
 
-OrderBook::OrderBook(size_t poolSize) : orderPool_(poolSize) {}
+OrderBook::OrderBook(const std::string& symbol, size_t poolSize)
+    : symbol_(symbol), orderPool_(poolSize) {}
 
 Order* OrderBook::addOrder(Side side, double price, uint32_t qty) {
     Order* order = orderPool_.allocate();
@@ -15,10 +16,11 @@ Order* OrderBook::addOrder(Side side, double price, uint32_t qty) {
     order->price = price;
     order->quantity = qty;
 
-    LOG_INFO("[OrderBook] ADD " + std::string(side == Side::BUY ? "BUY " : "SELL ") +
-            "id=" + std::to_string(order->orderId) +
-            " price=" + std::to_string(price) +
-            " qty=" + std::to_string(qty));
+    LOG_INFO("[OrderBook][" + symbol_ + "] ADD " +
+                std::string(side == Side::BUY ? "BUY " : "SELL ") +
+                "id=" + std::to_string(order->orderId) +
+                " price=" + std::to_string(price) +
+                " qty=" + std::to_string(qty));
 
     auto& book = (side == Side::BUY) ? bids_ : asks_;
     auto& level = book[price];
@@ -33,7 +35,7 @@ Order* OrderBook::addOrder(Side side, double price, uint32_t qty) {
 bool OrderBook::cancelOrder(uint64_t orderId) {
     auto it = orderIndex_.find(orderId);
     if (it == orderIndex_.end()) {
-        LOG_WARN("[OrderBook] CANCEL FAIL: order#" + std::to_string(orderId) + " not found");
+        LOG_WARN("[OrderBook][" + symbol_ + "] CANCEL FAIL: order#" + std::to_string(orderId) + " not found");
         return false;
     }
 
@@ -41,12 +43,12 @@ bool OrderBook::cancelOrder(uint64_t orderId) {
     auto& book = (order->side == Side::BUY) ? bids_ : asks_;
     auto levelIt = book.find(order->price);
     if (levelIt == book.end()) {
-        LOG_ERROR("[OrderBook] CANCEL FAIL: price level " + std::to_string(order->price) +
-            " missing for order#" + std::to_string(orderId));
+        LOG_ERROR("[OrderBook][" + symbol_ + "] CANCEL FAIL: price level " + std::to_string(order->price) +
+                  " missing for order#" + std::to_string(orderId));
         return false;
     }
 
-    LOG_INFO("[OrderBook] CANCEL order#" + std::to_string(orderId));
+    LOG_INFO("[OrderBook][" + symbol_ + "] CANCEL order#" + std::to_string(orderId));
 
     levelIt->second.remove(order);
     if (levelIt->second.empty()) book.erase(levelIt);
@@ -58,8 +60,15 @@ bool OrderBook::cancelOrder(uint64_t orderId) {
 }
 
 void OrderBook::matchOrder(Side side, double price, uint32_t qty) {
-    LOG_INFO("[OrderBook] NEW " + std::string(side == Side::BUY ? "BUY " : "SELL ") +
+    LOG_INFO("[OrderBook][" + symbol_ + "] NEW " +
+             std::string(side == Side::BUY ? "BUY " : "SELL ") +
              std::to_string(qty) + "@" + std::to_string(price));
+
+    Order* taker = orderPool_.allocate();
+    taker->orderId = nextOrderId_++;
+    taker->side = side;
+    taker->price = price;
+    taker->quantity = qty;
 
     uint32_t remaining = qty;
     auto& opposite = (side == Side::BUY) ? asks_ : bids_;
@@ -84,7 +93,7 @@ void OrderBook::matchOrder(Side side, double price, uint32_t qty) {
             uint32_t tradedQty = std::min(remaining, maker->quantity);
             double tradePrice = maker->price;
 
-            executeTrade(nullptr, maker, tradedQty, tradePrice);
+            executeTrade(taker, maker, tradedQty, tradePrice);
 
             maker->quantity -= tradedQty;
             remaining -= tradedQty;
@@ -104,19 +113,40 @@ void OrderBook::matchOrder(Side side, double price, uint32_t qty) {
 
     if (remaining > 0) {
         addOrder(side, price, remaining);
-        LOG_INFO("[OrderBook] REMAIN " + std::to_string(remaining) + "@" +
-                 std::to_string(price) + " added to book");
+        LOG_INFO("[OrderBook][" + symbol_ + "] REMAIN " +
+                 std::to_string(remaining) + "@" + std::to_string(price) + " added to book");
+    } else {
+        orderPool_.deallocate(taker);
     }
 
     updateBestPrices();
 }
 
-void OrderBook::executeTrade(Order* taker, Order* maker, uint32_t tradedQty, double tradePrice) {
-    LOG_INFO("[OrderBook] TRADE " +
-             std::to_string(tradedQty) + "@" + std::to_string(tradePrice) +
-             " maker#" + std::to_string(maker->orderId) +
-             " taker#" + (taker ? std::to_string(taker->orderId) : "(new)"));
+void OrderBook::executeTrade(Order* taker, Order* maker, uint32_t tradedQty, double tradePrice)
+{
+    if (!maker || !taker || tradedQty == 0) {
+        LOG_WARN("[OrderBook][" + symbol_ + "] executeTrade called with invalid params");
+        return;
+    }
+
+    TradeEvent evt;
+    evt.symbol = symbol_;
+    evt.makerOrderId = maker->orderId;
+    evt.takerOrderId = taker->orderId;
+    evt.price = tradePrice;
+    evt.qty = tradedQty;
+    evt.timestamp = static_cast<uint64_t>(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count());
+
+    tradeEvents_.push_back(std::move(evt));
+
+    LOG_INFO("[OrderBook][" + symbol_ + "] TRADE " +
+                std::to_string(tradedQty) + "@" + std::to_string(tradePrice) +
+                " maker#" + std::to_string(maker->orderId) +
+                " taker#" + std::to_string(taker->orderId));
 }
+
 
 void OrderBook::updateBestPrices() {
     bestBid_ = 0.0;
