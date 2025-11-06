@@ -16,7 +16,6 @@ public:
 
     void startWorkers();
     void shutdown();
-    bool submitTask(std::function<void()> fn);
 
     template<typename F>
     bool submitTask(F&& fn) {
