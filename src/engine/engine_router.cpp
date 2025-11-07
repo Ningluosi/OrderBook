@@ -1,6 +1,8 @@
 #include "engine/engine_router.h"
 #include "utils/logger.h"
 
+using namespace utils;
+
 namespace engine {
 
 EngineRouter& EngineRouter::instance() {
@@ -19,7 +21,7 @@ MatchingEngine* EngineRouter::route(const std::string& symbol) {
     if (it != routeTable_.end()) {
         return it->second;
     }
-    utils::LOG_WARN("[EngineRouter] No engine found for symbol=" + symbol);
+    LOG_WARN("[EngineRouter] No engine found for symbol=" + symbol);
     return nullptr;
 }
 

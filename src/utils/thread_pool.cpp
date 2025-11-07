@@ -1,4 +1,5 @@
 #include "utils/thread_pool.h"
+#include "utils/logger.h"
 
 namespace utils {
 

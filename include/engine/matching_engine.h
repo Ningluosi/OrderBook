@@ -14,7 +14,7 @@ public:
                             size_t poolSize = 100000)
         : dispatcher_(dispatcher),
         symbol_(std::move(symbol)),
-        orderBook_(poolSize) {}
+        orderBook_(symbol_, poolSize) {}
 
     void handleOrderMessage(DispatchMsg&& msg);
 

@@ -9,9 +9,9 @@ namespace core {
 OrderBook::OrderBook(const std::string& symbol, size_t poolSize)
     : symbol_(symbol), orderPool_(poolSize) {}
 
-Order* OrderBook::addOrder(Side side, double price, uint32_t qty) {
+Order* OrderBook::addOrder(Side side, double price, uint32_t qty, uint64_t orderId) {
     Order* order = orderPool_.allocate();
-    order->orderId = nextOrderId_++;
+    order->orderId = (orderId == 0) ? nextOrderId_++ : orderId;
     order->side = side;
     order->price = price;
     order->quantity = qty;
@@ -64,11 +64,11 @@ void OrderBook::matchOrder(Side side, double price, uint32_t qty) {
              std::string(side == Side::BUY ? "BUY " : "SELL ") +
              std::to_string(qty) + "@" + std::to_string(price));
 
-    Order* taker = orderPool_.allocate();
-    taker->orderId = nextOrderId_++;
-    taker->side = side;
-    taker->price = price;
-    taker->quantity = qty;
+    Order taker{};
+    taker.orderId = nextOrderId_++;
+    taker.side = side;
+    taker.price = price;
+    taker.quantity = qty;
 
     uint32_t remaining = qty;
     auto& opposite = (side == Side::BUY) ? asks_ : bids_;
@@ -93,7 +93,7 @@ void OrderBook::matchOrder(Side side, double price, uint32_t qty) {
             uint32_t tradedQty = std::min(remaining, maker->quantity);
             double tradePrice = maker->price;
 
-            executeTrade(taker, maker, tradedQty, tradePrice);
+            executeTrade(&taker, maker, tradedQty, tradePrice);
 
             maker->quantity -= tradedQty;
             remaining -= tradedQty;
@@ -112,11 +112,9 @@ void OrderBook::matchOrder(Side side, double price, uint32_t qty) {
     }
 
     if (remaining > 0) {
-        addOrder(side, price, remaining);
+        addOrder(side, price, remaining, taker.orderId);
         LOG_INFO("[OrderBook][" + symbol_ + "] REMAIN " +
                  std::to_string(remaining) + "@" + std::to_string(price) + " added to book");
-    } else {
-        orderPool_.deallocate(taker);
     }
 
     updateBestPrices();

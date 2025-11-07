@@ -1,4 +1,5 @@
 #include "utils/socketops.h"
+#include "utils/logger.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

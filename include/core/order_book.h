@@ -14,7 +14,7 @@ class OrderBook {
 public:
     explicit OrderBook(const std::string& symbol, size_t poolSize = 100000);
 
-    Order* addOrder(Side side, double price, uint32_t qty);
+    Order* addOrder(Side side, double price, uint32_t qty, uint64_t orderId = 0);
     bool cancelOrder(uint64_t orderId);
     void matchOrder(Side side, double price, uint32_t qty);
 

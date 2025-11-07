@@ -5,6 +5,7 @@
 #include <functional>
 #include "utils/lockfree_queue.h"
 #include "utils/thread_pool.h"
+#include "core/order.h"
 
 namespace engine {
 
