@@ -53,6 +53,19 @@ void MatchingEngine::handleNewOrder(const DispatchMsg& msg) {
              " qty=" + std::to_string(msg.qty) +
              " fd=" + std::to_string(msg.fd));
 
+    if (dispatcher_) {
+        DispatchMsg ack;
+        ack.fd = msg.fd;
+        ack.type = MsgType::ACK;
+        ack.payload =
+            R"({"type":"ACK","status":"RECEIVED","symbol":")" + msg.symbol + R"("})";
+        dispatcher_->pushOutbound(std::move(ack));
+
+        LOG_INFO("[MatchingEngine][" + symbol_ + "] ACK sent to fd="
+                 + std::to_string(msg.fd) + " (order received)");
+    } else {
+        LOG_WARN("[MatchingEngine][" + symbol_ + "] dispatcher_ is null, ACK not sent");
+    }
 
     orderBook_.matchOrder(msg.side, msg.price, msg.qty);
 
