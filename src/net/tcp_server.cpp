@@ -1,6 +1,7 @@
 #include "net/tcp_server.h"
 #include "utils/logger.h"
 #include <netinet/in.h>
+#include <cstring>
 
 using namespace utils;
 

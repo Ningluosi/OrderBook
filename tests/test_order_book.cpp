@@ -5,7 +5,7 @@ using namespace core;
 
 class OrderBookTest : public ::testing::Test {
 protected:
-    OrderBook book{10000};
+    OrderBook book{"APPL", 10000};
 
     void SetUp() override {
         book.addOrder(Side::SELL, 101.0, 10);

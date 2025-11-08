@@ -15,7 +15,7 @@ public:
     ~TcpServer();
 
     bool startListening();
-    void setMessageHandler(const MessageCallback& cb) { msgCallback_ = cb; }
+    void setMessageCallback(const MessageCallback& cb) { msgCallback_ = cb; }
 
 private:
     void handleAccept(int listenFd, uint32_t events);

@@ -1,9 +1,9 @@
-#include "engine/dispatcher.h"
+#include "dispatch/dispatcher.h"
 #include "engine/engine_router.h"
 #include <chrono>
 
 using namespace std::chrono_literals;
-namespace engine {
+namespace dispatch {
 
 Dispatcher::Dispatcher(size_t threadCount, size_t queueCapacity)
     : inboundQueue_(queueCapacity),

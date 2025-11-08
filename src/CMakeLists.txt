@@ -1,31 +1,16 @@
-cmake_minimum_required(VERSION 3.10)
-project(OrderBookEngine CXX)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_subdirectory(core)
+add_subdirectory(dispatch)
+add_subdirectory(engine)
+add_subdirectory(net)
+add_subdirectory(utils)
 
-# --- 源文件组织 ---
-file(GLOB_RECURSE CORE_SRC src/core/*.cpp)
-file(GLOB_RECURSE ENGINE_SRC src/engine/*.cpp)
-file(GLOB_RECURSE UTILS_SRC src/utils/*.cpp)
-# 如果你有 dispatch 目录（dispatcher、lockfreequeue等）
-file(GLOB_RECURSE DISPATCH_SRC src/dispatch/*.cpp)
-
-# --- 静态库 ---
-add_library(orderbook_core STATIC
-    ${CORE_SRC}
-    ${ENGINE_SRC}
-    ${UTILS_SRC}
-    ${DISPATCH_SRC}
+add_executable(orderbook_main main.cpp)
+target_link_libraries(orderbook_main
+    orderbook_core
+    orderbook_engine
+    orderbook_dispatch
+    orderbook_engine
+    orderbook_net
+    orderbook_utils
+    pthread
 )
-
-# --- 头文件路径 ---
-target_include_directories(orderbook_core PUBLIC
-    ${PROJECT_SOURCE_DIR}/include
-)
-
-# --- 链接依赖 ---
-target_link_libraries(orderbook_core pthread)
-
-# --- 主程序 ---
-add_executable(orderbook_main src/main.cpp)
-target_link_libraries(orderbook_main orderbook_core pthread)

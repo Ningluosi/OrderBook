@@ -1,6 +1,7 @@
 #include "engine/matching_engine.h"
 
 using namespace utils;
+using namespace dispatch;
 
 namespace engine {
 
@@ -59,6 +60,7 @@ void MatchingEngine::handleNewOrder(const DispatchMsg& msg) {
         for (const auto& evt : orderBook_.getTradeEvents()) {
             DispatchMsg trade;
             trade.type = MsgType::TRADE_REPORT;
+            trade.fd = msg.fd;
             trade.payload = R"({"type":"TRADE","price":)"
                 + std::to_string(evt.price)
                 + R"(,"qty":)" + std::to_string(evt.qty)

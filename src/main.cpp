@@ -1,10 +1,11 @@
 #include "engine/matching_engine.h"
-#include "engine/dispatcher.h"
+#include "dispatch/dispatcher.h"
 #include "utils/logger.h"
 
 using namespace engine;
 using namespace core;
 using namespace utils;
+using namespace dispatch;
 
 int main() {
     // ========= 1️⃣ 创建 dispatcher =========
