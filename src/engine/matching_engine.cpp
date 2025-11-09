@@ -32,15 +32,19 @@ void MatchingEngine::handleCancelOrder(const DispatchMsg& msg) {
     resp.fd = msg.fd;
     resp.type = MsgType::CANCEL_REPORT;
     resp.symbol = msg.symbol;
-    resp.payload = ok
-        ? R"({"status":"CANCEL_OK","orderId":)" + std::to_string(msg.orderId) + "}"
-        : R"({"status":"NOT_FOUND","orderId":)" + std::to_string(msg.orderId) + "}";
+    if (ok) {
+        resp.status = "CANCEL_OK";
+        resp.orderId = msg.orderId;
+    } else {
+        resp.status = "NOT_FOUND";
+        resp.orderId = msg.orderId;  
+    }
 
     if (dispatcher_) {
         dispatcher_->pushOutbound(std::move(resp));
         LOG_INFO("[MatchingEngine][" + symbol_ + "] CANCEL_REPORT sent to fd="
                  + std::to_string(msg.fd) +
-                 (ok ? " (CANCEL_OK)" : " (NOT_FOUND)"));
+                 resp.status);
     } else {
         LOG_WARN("[MatchingEngine] dispatcher_ is null, CANCEL_REPORT not sent");
     }
@@ -57,8 +61,9 @@ void MatchingEngine::handleNewOrder(const DispatchMsg& msg) {
         DispatchMsg ack;
         ack.fd = msg.fd;
         ack.type = MsgType::ACK;
-        ack.payload =
-            R"({"type":"ACK","status":"RECEIVED","symbol":")" + msg.symbol + R"("})";
+        ack.symbol = msg.symbol;
+        ack.status = "RECEIVED";
+
         dispatcher_->pushOutbound(std::move(ack));
 
         LOG_INFO("[MatchingEngine][" + symbol_ + "] ACK sent to fd="
@@ -74,11 +79,11 @@ void MatchingEngine::handleNewOrder(const DispatchMsg& msg) {
             DispatchMsg trade;
             trade.type = MsgType::TRADE_REPORT;
             trade.fd = msg.fd;
-            trade.payload = R"({"type":"TRADE","price":)"
-                + std::to_string(evt.price)
-                + R"(,"qty":)" + std::to_string(evt.qty)
-                + R"(,"makerId":)" + std::to_string(evt.makerOrderId)
-                + R"(,"takerId":)" + std::to_string(evt.takerOrderId) + "}";
+            trade.price = evt.price;
+            trade.qty = evt.qty;
+            trade.makerId = evt.makerOrderId;
+            trade.takerId = evt.takerOrderId;
+
             dispatcher_->pushOutbound(std::move(trade));
 
             LOG_INFO("[MatchingEngine][" + symbol_ + "] TRADE_REPORT sent:"

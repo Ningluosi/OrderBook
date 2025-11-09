@@ -37,7 +37,8 @@ void TcpServer::handleAccept(int listenFd, uint32_t) {
                   " (" + std::string(strerror(err)) + ")");
     }
 
-    conns_.emplace(connFd, TcpConnection(connFd));
+    conns_.try_emplace(connFd, connFd);
+
     reactor_.registerEventHandler(connFd, EPOLLIN, [this](int fd, uint32_t events) {
         handleRead(fd, events);
     });
@@ -63,6 +64,18 @@ void TcpServer::handleRead(int clientFd, uint32_t) {
 
 TcpServer::~TcpServer() {
     if (listenFd_ >= 0) close(listenFd_);
+}
+
+TcpConnection* TcpServer::getConnection (int fd) {
+    auto it = conns_.find(fd);
+    if (it == conns_.end()) return nullptr;
+    return &(it->second);
+}
+
+const TcpConnection* TcpServer::getConnection(int fd) const {
+    auto it = conns_.find(fd);
+    if (it == conns_.end()) return nullptr;
+    return &(it->second);
 }
 
 }

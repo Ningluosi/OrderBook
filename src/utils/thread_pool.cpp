@@ -4,17 +4,15 @@
 namespace utils {
 
 ThreadPool::ThreadPool(size_t nThreads)
-    : nThreads_(nThreads ? nThreads : 1) {
-    workers_.reserve(nThreads_);
-}
+    : nThreads_(nThreads ? nThreads : 1) {}
 
 
 ThreadPool::~ThreadPool() { shutdown(); }
 
 void ThreadPool::startWorkers() {
     if (poolRunning_.exchange(true)) return;
-    for (auto &t : workers_) {
-        t = std::thread([this]{ runWorkerLoop(); });
+    for (size_t i = 0; i < nThreads_; ++i) {
+        workers_.emplace_back([this, i] { runWorkerLoop(i); });
     }
 }
 
@@ -26,7 +24,8 @@ void ThreadPool::shutdown() {
     }
 }
 
-void ThreadPool::runWorkerLoop() {
+void ThreadPool::runWorkerLoop(size_t id) {
+    LOG_INFO("[ThreadPool] Worker #" + std::to_string(id) + " started");
     while (true) {
         std::function<void()> taskFn;
         {
@@ -40,9 +39,9 @@ void ThreadPool::runWorkerLoop() {
         try {
             if (taskFn) taskFn();
         } catch (const std::exception& e) {
-            LOG_ERROR(std::string("[ThreadPool] Task threw exception: ") + e.what());
+            LOG_ERROR("[ThreadPool] Worker #" + std::to_string(id) + " exception: " + e.what());
         } catch (...) {
-            LOG_ERROR("[ThreadPool] Unknown exception in task");
+            LOG_ERROR("[ThreadPool] Worker #" + std::to_string(id) + " unknown exception");
         }
     }
 }

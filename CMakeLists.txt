@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 3.16)
 project(OrderBookEngine CXX)
 set(CMAKE_CXX_STANDARD 17)
 
-include_directories(include)
+include_directories(
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/third_party
+)
 
 add_subdirectory(src)
 add_subdirectory(tests)

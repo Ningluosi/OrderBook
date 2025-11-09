@@ -23,6 +23,10 @@ struct DispatchMsg {
     uint32_t qty = 0;
     uint64_t orderId = 0;
     uint64_t clientId = 0;
+    uint64_t makerId = 0;
+    uint64_t takerId = 0;
+    std::string status;
+    std::string msg;
     std::string payload;
 };
 

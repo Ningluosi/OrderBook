@@ -29,7 +29,7 @@ public:
     }
 
 private:
-    void runWorkerLoop();
+    void runWorkerLoop(size_t id);
 
     size_t nThreads_;
     std::vector<std::thread> workers_;

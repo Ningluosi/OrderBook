@@ -10,46 +10,58 @@ template<typename T>
 class LockFreeQueue {
 public:
     explicit LockFreeQueue(size_t capacityPow2 = 1024)
-        : cap_(roundUpPow2(capacityPow2)), mask_(cap_ - 1),
-          buffer_(cap_), head_(0), tail_(0) {}
+        : cap_(roundUpPow2(capacityPow2)),
+          mask_(cap_ - 1),
+          buffer_(cap_),
+          head_(0),
+          tail_(0)
+    {
+        for (size_t i = 0; i < cap_; ++i) {
+            buffer_[i].seq.store(i, std::memory_order_relaxed);
+        }
+    }
 
     bool push(const T& v) { return emplace(v); }
     bool push(T&& v)      { return emplace(std::move(v)); }
 
     bool pop(T& out) {
         size_t head = head_.load(std::memory_order_acquire);
-        size_t tail = tailCache_.load(std::memory_order_relaxed);
-        if (head == tail) {
-            tail = tail_.load(std::memory_order_acquire);
-            tailCache_.store(tail, std::memory_order_relaxed);
-            if (head == tail) return false;
+        Cell& c = buffer_[head & mask_];
+
+        size_t expected = head + 1;
+        size_t seq = c.seq.load(std::memory_order_acquire);
+
+        if (seq != expected) {
+            return false;
         }
-        out = std::move(buffer_[head & mask_]);
-        head_.store(head + 1, std::memory_order_release);
+
+        out = std::move(c.value);
+        c.seq.store(head + cap_, std::memory_order_release);
+        head_.store(head + 1, std::memory_order_relaxed);
         return true;
     }
 
 private:
+    struct Cell {
+        std::atomic<size_t> seq;
+        T value;
+    };
+
     template<typename U>
     bool emplace(U&& v) {
-        size_t tail = tail_.fetch_add(1, std::memory_order_acq_rel);
-        size_t head = headCache_.load(std::memory_order_relaxed);
-        if (tail - head >= cap_) {
-            tail_.fetch_sub(1, std::memory_order_acq_rel);
-            head = head_.load(std::memory_order_acquire);
-            headCache_.store(head, std::memory_order_relaxed);
+        size_t pos = tail_.fetch_add(1, std::memory_order_acq_rel);
+        Cell& c = buffer_[pos & mask_];
 
-            if (tail - head >= cap_) return false;
+        size_t expected = pos;
+        size_t seq = c.seq.load(std::memory_order_acquire);
 
-            size_t t2 = tail_.fetch_add(1, std::memory_order_acq_rel);
-            if (t2 - head >= cap_) {
-                tail_.fetch_sub(1, std::memory_order_acq_rel);
-                return false;
-            }
-            buffer_[t2 & mask_] = std::forward<U>(v);
-            return true;
+        if (seq != expected) {
+            return false;
         }
-        buffer_[tail & mask_] = std::forward<U>(v);
+
+        c.value = std::forward<U>(v);
+
+        c.seq.store(pos + 1, std::memory_order_release);
         return true;
     }
 
@@ -67,13 +79,10 @@ private:
 
     const size_t cap_;
     const size_t mask_;
-    std::vector<T> buffer_;
+    std::vector<Cell> buffer_;
 
     std::atomic<size_t> head_;
     std::atomic<size_t> tail_;
-
-    std::atomic<size_t> headCache_{0};
-    std::atomic<size_t> tailCache_{0};
 };
 
 }

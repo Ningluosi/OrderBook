@@ -16,6 +16,8 @@ public:
 
     bool startListening();
     void setMessageCallback(const MessageCallback& cb) { msgCallback_ = cb; }
+    TcpConnection* getConnection (int fd);
+    const TcpConnection* getConnection (int fd) const;
 
 private:
     void handleAccept(int listenFd, uint32_t events);

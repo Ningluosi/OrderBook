@@ -12,7 +12,7 @@ namespace dispatch {
 
 class Dispatcher {
 public:
-    using SendFunc = std::function<bool(int, const std::string&)>;
+    using SendFunc = std::function<bool(const DispatchMsg&)>;
 
     Dispatcher(size_t threadCount = 4, size_t queueCapacity = 4096);
     ~Dispatcher();

@@ -1,8 +1,11 @@
 #include "dispatch/dispatcher.h"
 #include "engine/engine_router.h"
+#include "utils/logger.h"
 #include <chrono>
 
 using namespace std::chrono_literals;
+using namespace utils;
+
 namespace dispatch {
 
 Dispatcher::Dispatcher(size_t threadCount, size_t queueCapacity)
@@ -62,7 +65,7 @@ void Dispatcher::consumerOutboundLoop() {
         int idleSpins = 0;
         while (running_ && outboundQueue_.pop(msg)) {
             if (sender_) {
-                sender_(msg.fd, msg.payload);
+                sender_(msg);
             }
             idleSpins = 0;
         }
