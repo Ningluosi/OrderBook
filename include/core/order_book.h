@@ -26,6 +26,7 @@ public:
 
     double bestBid() const noexcept { return bestBid_; }
     double bestAsk() const noexcept { return bestAsk_; }
+    const std::string& symbol() const noexcept { return symbol_; }
 
     const std::vector<TradeEvent>& getTradeEvents() const noexcept { return tradeEvents_; }
     void clearTradeEvents() noexcept { tradeEvents_.clear(); }

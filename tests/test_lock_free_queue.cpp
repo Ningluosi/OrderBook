@@ -47,4 +47,3 @@ TEST(LockFreeQueueTest, CircularReuse) {
     EXPECT_TRUE((results == std::vector<int>{2, 100, 200}));
 }
 
-
