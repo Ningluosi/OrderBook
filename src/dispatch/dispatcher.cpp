@@ -8,71 +8,67 @@ using namespace utils;
 
 namespace dispatch {
 
-Dispatcher::Dispatcher(size_t threadCount, size_t queueCapacity)
-    : inboundQueue_(queueCapacity),
-      outboundQueue_(queueCapacity),
-      threadPool_(threadCount) {}
+Dispatcher::Dispatcher(size_t queueCapacity)
+    : readyEngines_(queueCapacity) {}
 
 Dispatcher::~Dispatcher() { stop(); }
 
-bool Dispatcher::pushInbound(DispatchMsg&& msg) {
-    return inboundQueue_.push(std::move(msg));
+bool Dispatcher::routeInbound(DispatchMsg&& msg) {
+    auto* engine = engine::EngineRouter::instance().route(msg.symbol);
+    if (!engine) {
+        LOG_WARN("[Dispatcher] No engine found for symbol=" + msg.symbol);
+        return false;
+    }
+    return engine->routeInbound(std::move(msg));
 }
 
-bool Dispatcher::pushOutbound(DispatchMsg&& msg) {
-    return outboundQueue_.push(std::move(msg));
+void Dispatcher::registerEngine(engine::MatchingEngine* engine) {
+    engine->setOutboundCallback([this, engine]() {
+        readyEngines_.push(engine);
+    });
+    LOG_INFO("[Dispatcher] Registered outbound callback for engine");
 }
 
 void Dispatcher::start() {
     if (running_.exchange(true)) return;
-    threadPool_.startWorkers();
-
-    inboundThread_  = std::thread([this]{ consumerInboundLoop(); });
-    outboundThread_ = std::thread([this]{ consumerOutboundLoop(); });
+    loopThread_ = std::thread([this] { dispatchLoop(); });
+    LOG_INFO("[Dispatcher] Event loop started");
 }
 
 void Dispatcher::stop() {
     if (!running_.exchange(false)) return;
-    if (inboundThread_.joinable())  inboundThread_.join();
-    if (outboundThread_.joinable()) outboundThread_.join();
-    threadPool_.shutdown();
+    if (loopThread_.joinable()) loopThread_.join();
+    LOG_INFO("[Dispatcher] Event loop stopped");
 }
 
-void Dispatcher::consumerInboundLoop() {
-    DispatchMsg msg;
+void Dispatcher::dispatchLoop() {
+    engine::MatchingEngine* eng = nullptr;
+    int idleSpins = 0;
+
     while (running_) {
-        int idleSpins = 0;
-        while (running_ && inboundQueue_.pop(msg)) {
-            auto task = [m = std::move(msg)]() mutable {
-                auto* engine = engine::EngineRouter::instance().route(m.symbol);
-                if (engine) {
-                    engine->handleOrderMessage(std::move(m));
-                }
-            };
-            threadPool_.submitTask(std::move(task));
-            idleSpins = 0;
+        bool progressed = false;
+        while (readyEngines_.pop(eng)) {
+            progressed = true;
+            processOutbound(*eng);
         }
-        if (++idleSpins > 64) {
-            std::this_thread::sleep_for(50us);
+
+        if (!progressed) {
+            if (++idleSpins > 64) {
+                std::this_thread::sleep_for(50us);
+                idleSpins = 0;
+            }
+        } else {
             idleSpins = 0;
         }
     }
 }
 
-void Dispatcher::consumerOutboundLoop() {
+void Dispatcher::processOutbound(engine::MatchingEngine& eng) {
+    if (!sender_) return;
+
     DispatchMsg msg;
-    while (running_) {
-        int idleSpins = 0;
-        while (running_ && outboundQueue_.pop(msg)) {
-            if (sender_) {
-                sender_(msg);
-            }
-            idleSpins = 0;
-        }
-        if (++idleSpins > 64) {
-            std::this_thread::sleep_for(50us);
-            idleSpins = 0;
-        }
+    while (eng.popOutbound(msg)) {
+        sender_(msg);
     }
 }
 

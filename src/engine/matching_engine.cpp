@@ -70,7 +70,9 @@ void MatchingEngine::handleOrderMessage(DispatchMsg&& msg) {
         err.type   = MsgType::UNKNOWN;
         err.symbol = msg.symbol;
         err.status = "UNKNOWN_SYMBOL";
-        outboundQueue_.push(std::move(err));
+        if (!pushOutbound(std::move(err))) {
+            LOG_WARN("[MatchingEngine] outbound queue full!");
+        }
         return;
     }
     auto& ob = it->second;
@@ -89,7 +91,9 @@ void MatchingEngine::handleOrderMessage(DispatchMsg&& msg) {
             err.type   = MsgType::UNKNOWN;
             err.symbol = msg.symbol;
             err.status = "UNKNOWN_MSGTYPE";
-            outboundQueue_.push(std::move(err));
+            if (!pushOutbound(std::move(err))) {
+                LOG_WARN("[MatchingEngine] outbound queue full!");
+            }
             break;
         }
     }
@@ -109,7 +113,9 @@ void MatchingEngine::handleCancelOrder(const DispatchMsg& msg, core::OrderBook& 
     resp.orderId= msg.orderId;
     resp.status = ok ? "CANCEL_OK" : "NOT_FOUND";
 
-    outboundQueue_.push(std::move(resp));
+    if (!pushOutbound(std::move(resp))) {
+        LOG_WARN("[MatchingEngine] outbound queue full!");
+    }
 
     LOG_INFO("[MatchingEngine][" + ob.symbol() + "] CANCEL_REPORT fd="
              + std::to_string(msg.fd) + " status=" + (ok ? "OK" : "NOT_FOUND"));
@@ -128,7 +134,9 @@ void MatchingEngine::handleNewOrder(const DispatchMsg& msg, core::OrderBook& ob)
         ack.type   = MsgType::ACK;
         ack.symbol = msg.symbol;
         ack.status = "RECEIVED";
-        outboundQueue_.push(std::move(ack));
+        if (!pushOutbound(std::move(ack))) {
+            LOG_WARN("[MatchingEngine] outbound queue full!");
+        }
     }
 
     ob.matchOrder(msg.side, msg.price, msg.qty);
@@ -142,7 +150,9 @@ void MatchingEngine::handleNewOrder(const DispatchMsg& msg, core::OrderBook& ob)
         trade.qty     = evt.qty;
         trade.makerId = evt.makerOrderId;
         trade.takerId = evt.takerOrderId;
-        outboundQueue_.push(std::move(trade));
+        if (!pushOutbound(std::move(trade))) {
+            LOG_WARN("[MatchingEngine] outbound queue full!");
+        }
 
         LOG_INFO("[MatchingEngine][" + ob.symbol() + "] TRADE_REPORT"
                  " px=" + std::to_string(evt.price) +
@@ -152,6 +162,16 @@ void MatchingEngine::handleNewOrder(const DispatchMsg& msg, core::OrderBook& ob)
     }
 
     ob.clearTradeEvents();
+}
+
+void MatchingEngine::setOutboundCallback(std::function<void()> cb) {
+    outboundReadyCallback_ = std::move(cb);
+}
+
+bool MatchingEngine::pushOutbound(const dispatch::DispatchMsg&& msg) {
+    bool ok = outboundQueue_.push(std::move(msg));
+    if (ok && outboundReadyCallback_) outboundReadyCallback_();
+    return ok;
 }
 
 }

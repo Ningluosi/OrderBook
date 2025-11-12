@@ -14,7 +14,7 @@ class Dispatcher {
 public:
     using SendFunc = std::function<bool(const DispatchMsg&)>;
 
-    Dispatcher(size_t threadCount = 4, size_t queueCapacity = 4096);
+    explicit Dispatcher(size_t queueCapacity = 1024);
     ~Dispatcher();
 
     Dispatcher(const Dispatcher&) = delete;
@@ -22,26 +22,21 @@ public:
 
     void setSender(SendFunc sender) { sender_ = std::move(sender); }
 
-    bool pushInbound(DispatchMsg&& msg);
-    bool pushOutbound(DispatchMsg&& msg);
+    bool routeInbound(DispatchMsg&& msg);
 
     void start();
     void stop();
 
+    void registerEngine(engine::MatchingEngine* engine);
+
 private:
-    void consumerInboundLoop();
-    void consumerOutboundLoop(); 
+    void dispatchLoop();
+    void processOutbound(engine::MatchingEngine& eng);
 
-
-    utils::LockFreeQueue<DispatchMsg> inboundQueue_;
-    utils::LockFreeQueue<DispatchMsg> outboundQueue_;
-    utils::ThreadPool threadPool_;
-
-    std::thread inboundThread_;
-    std::thread outboundThread_;
-
+private:
+    utils::LockFreeQueue<engine::MatchingEngine*> readyEngines_;
+    std::thread loopThread_;
     std::atomic<bool> running_{false};
-    std::thread consumerThread_;
     SendFunc sender_;
 };
 
