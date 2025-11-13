@@ -1,14 +1,22 @@
-#include "net/tcp_server.h"
-#include "utils/logger.h"
 #include <netinet/in.h>
 #include <cstring>
+#include "net/tcp_server.h"
+#include "utils/logger.h"
+#include "utils/message_parser.h"
 
 using namespace utils;
 
 namespace net {
 
-TcpServer::TcpServer(EpollReactor& reactor, const std::string& host, uint16_t port)
-    : reactor_(reactor) {
+TcpServer::TcpServer(EpollReactor& reactor,
+                     utils::ThreadPool& tp,
+                     dispatch::Dispatcher& dispatcher,
+                     const std::string& host,
+                     uint16_t port)
+    : reactor_(reactor),
+      threadPool_(tp),
+      dispatcher_(dispatcher)
+{
     listenFd_ = createListenSocket(host, port, 128);
     if (listenFd_ < 0) {
         LOG_ERROR("[TcpServer] Failed to create listen socket");
@@ -46,20 +54,36 @@ void TcpServer::handleAccept(int listenFd, uint32_t) {
     LOG_INFO("[TcpServer] New connection accepted, fd=" + std::to_string(connFd));
 }
 
-void TcpServer::handleRead(int clientFd, uint32_t) {
-    auto it = conns_.find(clientFd);
+void TcpServer::handleRead(int connFd, uint32_t) {
+    auto it = conns_.find(connFd);
     if (it == conns_.end()) {
-        LOG_WARN("[TcpServer] Read event for unknown fd=" + std::to_string(clientFd));
+        LOG_WARN("[TcpServer] Read event for unknown fd=" + std::to_string(connFd));
         return;
     }
     auto data = it->second.read();
     if (data.empty()) {
-        LOG_INFO("[TcpServer] Connection closed, fd=" + std::to_string(clientFd));
-        reactor_.unregisterEventHandler(clientFd);
+        LOG_INFO("[TcpServer] Connection closed, fd=" + std::to_string(connFd));
+        reactor_.unregisterEventHandler(connFd);
         conns_.erase(it);
         return;
     }
-    if (msgCallback_) msgCallback_(clientFd, data);
+
+    threadPool_.submitTask([this, connFd, raw = std::move(data)]() mutable {
+        try {
+            auto msg = parseMsg(raw);
+
+            msg.fd = connFd;
+
+            if (!dispatcher_.routeInbound(std::move(msg))) {
+                LOG_WARN("[TcpServer] routeInbound failed for fd="
+                         + std::to_string(connFd));
+            }
+
+        } catch (const std::exception& ex) {
+            LOG_ERROR(std::string("[TcpServer] parse or dispatch failed fd=")
+                      + std::to_string(connFd) + " ex=" + ex.what());
+        }
+    });
 }
 
 TcpServer::~TcpServer() {

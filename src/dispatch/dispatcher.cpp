@@ -1,7 +1,8 @@
+#include <chrono>
 #include "dispatch/dispatcher.h"
 #include "engine/engine_router.h"
 #include "utils/logger.h"
-#include <chrono>
+#include "utils/message_encoder.h"
 
 using namespace std::chrono_literals;
 using namespace utils;
@@ -19,7 +20,7 @@ bool Dispatcher::routeInbound(DispatchMsg&& msg) {
         LOG_WARN("[Dispatcher] No engine found for symbol=" + msg.symbol);
         return false;
     }
-    return engine->routeInbound(std::move(msg));
+    return engine->pushInbound(std::move(msg));
 }
 
 void Dispatcher::registerEngine(engine::MatchingEngine* engine) {
@@ -68,7 +69,8 @@ void Dispatcher::processOutbound(engine::MatchingEngine& eng) {
 
     DispatchMsg msg;
     while (eng.popOutbound(msg)) {
-        sender_(msg);
+        std::string encoded = encodeMsg(msg);
+        sender_(msg.fd, encoded);
     }
 }
 

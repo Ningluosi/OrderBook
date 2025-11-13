@@ -4,15 +4,15 @@
 #include <thread>
 #include <functional>
 #include "utils/lockfree_queue.h"
-#include "utils/thread_pool.h"
 #include "core/order.h"
 #include "dispatch/dispatch_msg.h"
+#include "engine/matching_engine.h"
 
 namespace dispatch {
 
 class Dispatcher {
 public:
-    using SendFunc = std::function<bool(const DispatchMsg&)>;
+    using SendFunc = std::function<bool(int fd, const std::string& payload)>;
 
     explicit Dispatcher(size_t queueCapacity = 1024);
     ~Dispatcher();
