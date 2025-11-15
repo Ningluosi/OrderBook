@@ -24,8 +24,8 @@ public:
 
     bool routeInbound(DispatchMsg&& msg);
 
-    void start();
-    void stop();
+    void startDispatcher();
+    void stopDispatcher();
 
     void registerEngine(engine::MatchingEngine* engine);
 

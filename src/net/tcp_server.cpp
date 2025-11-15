@@ -9,19 +9,33 @@ using namespace utils;
 namespace net {
 
 TcpServer::TcpServer(EpollReactor& reactor,
-                     utils::ThreadPool& tp,
                      dispatch::Dispatcher& dispatcher,
                      const std::string& host,
-                     uint16_t port)
+                     uint16_t port,
+                     size_t threadCount)
     : reactor_(reactor),
-      threadPool_(tp),
-      dispatcher_(dispatcher)
+      dispatcher_(dispatcher),
+      threadPool_(threadCount)
 {
     listenFd_ = createListenSocket(host, port, 128);
     if (listenFd_ < 0) {
         LOG_ERROR("[TcpServer] Failed to create listen socket");
         throw std::runtime_error("listen socket error");
     }
+}
+
+TcpServer::~TcpServer() {
+    shutdownServer();
+    if (listenFd_ >= 0) close(listenFd_);
+}
+
+bool TcpServer::startServer() {
+    threadPool_.startWorkers();
+    return startListening();
+}
+
+void TcpServer::shutdownServer() {
+    threadPool_.shutdown();
 }
 
 bool TcpServer::startListening() {
@@ -84,10 +98,6 @@ void TcpServer::handleRead(int connFd, uint32_t) {
                       + std::to_string(connFd) + " ex=" + ex.what());
         }
     });
-}
-
-TcpServer::~TcpServer() {
-    if (listenFd_ >= 0) close(listenFd_);
 }
 
 TcpConnection* TcpServer::getConnection (int fd) {

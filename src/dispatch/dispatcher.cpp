@@ -12,7 +12,7 @@ namespace dispatch {
 Dispatcher::Dispatcher(size_t queueCapacity)
     : readyEngines_(queueCapacity) {}
 
-Dispatcher::~Dispatcher() { stop(); }
+Dispatcher::~Dispatcher() { stopDispatcher(); }
 
 bool Dispatcher::routeInbound(DispatchMsg&& msg) {
     auto* engine = engine::EngineRouter::instance().route(msg.symbol);
@@ -30,13 +30,13 @@ void Dispatcher::registerEngine(engine::MatchingEngine* engine) {
     LOG_INFO("[Dispatcher] Registered outbound callback for engine");
 }
 
-void Dispatcher::start() {
+void Dispatcher::startDispatcher() {
     if (running_.exchange(true)) return;
     loopThread_ = std::thread([this] { dispatchLoop(); });
     LOG_INFO("[Dispatcher] Event loop started");
 }
 
-void Dispatcher::stop() {
+void Dispatcher::stopDispatcher() {
     if (!running_.exchange(false)) return;
     if (loopThread_.joinable()) loopThread_.join();
     LOG_INFO("[Dispatcher] Event loop stopped");

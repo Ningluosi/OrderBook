@@ -11,25 +11,27 @@ namespace net {
 class TcpServer {
 public:
     explicit TcpServer(EpollReactor& reactor,
-                    utils::ThreadPool& tp,
                     dispatch::Dispatcher& dispatcher,
                     const std::string& host,
-                    uint16_t port);
+                    uint16_t port,
+                    size_t threadCount = std::thread::hardware_concurrency());
 
     ~TcpServer();
 
-    bool startListening();
+    bool startServer();
+    void shutdownServer();
 
     TcpConnection* getConnection (int fd);
     const TcpConnection* getConnection (int fd) const;
 
 private:
+    bool startListening();
     void handleAccept(int listenFd, uint32_t events);
     void handleRead(int connFd, uint32_t events);
 
 private:
     EpollReactor& reactor_;
-    utils::ThreadPool& threadPool_;
+    utils::ThreadPool threadPool_;
     dispatch::Dispatcher& dispatcher_;
 
     int listenFd_{-1};
