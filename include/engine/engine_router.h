@@ -10,7 +10,7 @@ class EngineRouter {
 public:
     static EngineRouter& instance();
 
-    void registerEngine(const std::string& symbol, MatchingEngine* engine);
+    void bindSymbolToEngine(const std::string& symbol, MatchingEngine* engine);
 
     MatchingEngine* route(const std::string& symbol);
 

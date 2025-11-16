@@ -23,7 +23,7 @@ bool Dispatcher::routeInbound(DispatchMsg&& msg) {
     return engine->pushInbound(std::move(msg));
 }
 
-void Dispatcher::registerEngine(engine::MatchingEngine* engine) {
+void Dispatcher::attachEngine(engine::MatchingEngine* engine) {
     engine->setOutboundCallback([this, engine]() {
         readyEngines_.push(engine);
     });
@@ -45,7 +45,6 @@ void Dispatcher::stopDispatcher() {
 void Dispatcher::dispatchLoop() {
     engine::MatchingEngine* eng = nullptr;
     int idleSpins = 0;
-
     while (running_) {
         bool progressed = false;
         while (readyEngines_.pop(eng)) {

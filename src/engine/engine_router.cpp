@@ -10,7 +10,7 @@ EngineRouter& EngineRouter::instance() {
     return router;
 }
 
-void EngineRouter::registerEngine(const std::string& symbol, MatchingEngine* engine) {
+void EngineRouter::bindSymbolToEngine(const std::string& symbol, MatchingEngine* engine) {
     std::lock_guard<std::mutex> lock(mutex_);
     routeTable_[symbol] = engine;
 }

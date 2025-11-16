@@ -27,7 +27,7 @@ public:
     void startDispatcher();
     void stopDispatcher();
 
-    void registerEngine(engine::MatchingEngine* engine);
+    void attachEngine(engine::MatchingEngine* engine);
 
 private:
     void dispatchLoop();
