@@ -1,14 +1,10 @@
+<p align="right">
+  <a href="README.md">中文</a> | <a href="README_EN.md">English</a>
+</p>
+
 # MatchingEngine — C++17 高性能撮合引擎原型
 
-<div style="display:flex; justify-content:space-between;">
-  <img src="https://img.shields.io/badge/license-MIT-green">
-  <span>🌐 <a href="README_EN.md">English Version</a></span>
-</div>
-
-
----
-
-## 项目简介
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
 本项目实现了一个基于 **Reactor + Dispatcher + MatchingEngine + OrderBook** 的高性能撮合系统原型，包含完整的撮合链路与订单管理能力。系统特点包括：
 
@@ -21,7 +17,7 @@
 
 适合作为：
 
-- **量化开发 / 交易系统岗面试项目**
+- **量化开发 / 交易系统岗面试**
 - **高性能 C++ 工程展示**
 - **撮合引擎数据结构与系统架构学习项目**
 
@@ -83,3 +79,72 @@ OrderBook/
   - 撤单、剩余数量处理、价格档清理  
 
 ---
+## 构建与运行
+
+### 构建
+
+```bash
+mkdir build && cd build
+cmake ..
+make -j
+```
+
+### 启动撮合服务器
+
+```bash
+./src/matchengine_main
+```
+
+### 用 nc 测试
+
+```bash
+nc 127.0.0.1 9000
+```
+
+### 示例订单
+在 nc 中输入如下 JSON：
+
+下单
+```json
+{"type":"NEW_ORDER","symbol":"MAOTAI","side":"BUY","price":100,"qty":10}
+```
+
+卖单成交
+```json
+{"type":"NEW_ORDER","symbol":"MAOTAI","side":"SELL","price":99.0,"qty":5}
+```
+
+撤单
+```json
+{"type":"CANCEL_ORDER","symbol":"MAOTAI","orderId":1}
+```
+
+---
+
+## 性能（未来补充）
+
+
+* 单引擎 → 入站 TPS（吞吐量）
+
+* 纯撮合延迟（match-only latency）
+
+* 端到端往返延迟（RTT，使用 nc 测试）
+
+* 高负载下线程池饱和情况（ThreadPool saturation）
+
+---
+
+## 未来规划
+- 多引擎分片撮合
+- 行情广播模块
+- 数据持久化（Snapshot + WAL）
+- SO_REUSEPORT 多 Reactor 扩展
+- WebSocket 网关
+- 单元测试全面覆盖
+- 性能基准测试模块
+
+---
+
+## 许可证
+本项目采用 MIT License 开源协议。  
+完整内容请参见 [`LICENSE`](./LICENSE) 文件。

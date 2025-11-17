@@ -5,8 +5,13 @@
 #include <chrono>
 #include <iostream>
 
+#ifdef UNIT_TEST
+#undef LOG_LEVEL
+#define LOG_LEVEL 0
+#else
 #ifndef LOG_LEVEL
 #define LOG_LEVEL 3
+#endif
 #endif
 
 
