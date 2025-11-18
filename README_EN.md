@@ -44,11 +44,11 @@ OrderBook/
 
 
 
-## 🔄 消息流
+## 🔄 Message Flow
 ![Matching Engine Msg Flow](docs/sequence.svg)
 
 
-## 🧵 线程模型
+## 🧵 Thread Model
 ![Matching Engine Thread Model](docs/thread_model.svg)
 
 ## 🚀 Core Features
