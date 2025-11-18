@@ -22,8 +22,6 @@
 - **撮合引擎数据结构与系统架构学习项目**
 
 
----
-
 ## 📁 项目结构
 
 ```
@@ -40,12 +38,18 @@ OrderBook/
 └── CMakeLists.txt         # 构建脚本
 ```
 
----
 
 ## 🧩 系统架构
 ![Matching Engine Architecture](docs/matching_engine_architecture.svg)
 
----
+
+## 🔄 消息流
+![Matching Engine Msg Flow](docs/sequence.svg)
+
+
+## 🧵 线程模型
+![Matching Engine Thread Model](docs/thread_model.svg)
+
 
 ## 🚀 核心特性
 
@@ -79,7 +83,7 @@ OrderBook/
   - 部分成交 / 全量成交  
   - 撤单、剩余数量处理、价格档清理  
 
----
+
 ## ⚙️ 构建与运行
 
 ### 构建
@@ -120,8 +124,6 @@ nc 127.0.0.1 9000
 {"type":"CANCEL_ORDER","symbol":"MAOTAI","orderId":1}
 ```
 
----
-
 ## 📈 性能（未来补充）
 
 
@@ -133,7 +135,6 @@ nc 127.0.0.1 9000
 
 * 高负载下线程池饱和情况（ThreadPool saturation）
 
----
 
 ##  🧭 未来规划
 - 多引擎分片撮合
@@ -144,7 +145,6 @@ nc 127.0.0.1 9000
 - 单元测试全面覆盖
 - 性能基准测试模块
 
----
 
 ## 📄 许可证
 本项目采用 MIT License 开源协议。  

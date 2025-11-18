@@ -42,6 +42,15 @@ OrderBook/
 
 ![Matching Engine Architecture](docs/matching_engine_architecture.svg)
 
+
+
+## 🔄 消息流
+![Matching Engine Msg Flow](docs/sequence.svg)
+
+
+## 🧵 线程模型
+![Matching Engine Thread Model](docs/thread_model.svg)
+
 ## 🚀 Core Features
 
 ### Network Layer (Reactor Model)
