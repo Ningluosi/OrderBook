@@ -5,8 +5,7 @@
 # MatchingEngine — High-Performance C++17 Matching Engine Prototype
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-This project implements a high-performance matching engine prototype based on a **Reactor + Dispatcher + MatchingEngine + OrderBook** architecture.  
-It includes a complete order-processing pipeline and deterministic matching logic.
+This project implements a high-performance matching engine prototype based on a **Reactor + Dispatcher + MatchingEngine + OrderBook** architecture. It includes a complete order-processing pipeline and deterministic matching logic.
 
 Key system components include:
 
