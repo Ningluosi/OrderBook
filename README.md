@@ -50,6 +50,9 @@ OrderBook/
 ## 🧵 线程模型
 ![Matching Engine Thread Model](docs/thread_model.svg)
 
+## 🔁 撮合流程
+![Matching Engine Matching Flow](docs/matching_flow.svg)
+
 
 ## 🚀 核心特性
 

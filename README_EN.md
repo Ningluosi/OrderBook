@@ -51,6 +51,9 @@ OrderBook/
 ## 🧵 Thread Model
 ![Matching Engine Thread Model](docs/thread_model.svg)
 
+## 🔁 Matching Flow
+![Matching Engine Matching Flow](docs/matching_flow.svg)
+
 ## 🚀 Core Features
 
 ### Network Layer (Reactor Model)
