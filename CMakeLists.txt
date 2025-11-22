@@ -31,4 +31,4 @@ if (PERF_TEST)
 endif()
 
 add_subdirectory(src)
-add_subdirectory(tests)
+add_subdirectory(tests/unit)
