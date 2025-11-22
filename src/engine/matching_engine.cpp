@@ -43,6 +43,7 @@ void MatchingEngine::matchingLoop() {
     while (running_) {
         bool progressed = false;
         while (inboundQueue_.pop(msg)) {
+            inboundProcessed_.fetch_add(1, std::memory_order_relaxed);
             progressed = true;
             handleOrderMessage(std::move(msg));
         }

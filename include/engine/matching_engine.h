@@ -31,6 +31,7 @@ public:
     void handleOrderMessage(dispatch::DispatchMsg&& msg);
     void setOutboundCallback(std::function<void()> cb);
 
+    std::atomic<uint64_t> inboundProcessed_{0};
 private:
     void matchingLoop();
     void handleNewOrder(const dispatch::DispatchMsg& msg, core::OrderBook& ob);
