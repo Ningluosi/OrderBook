@@ -7,15 +7,28 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/third_party
 )
 
-# -------------------------------------------------------------
-# Logging configuration
-# -------------------------------------------------------------
-set(LOG_LEVEL "3" CACHE STRING "Log verbosity level (0=none, 1=error, 2=warn, 3=info)")
-set_property(CACHE LOG_LEVEL PROPERTY STRINGS "0" "1" "2" "3")
+option(UNIT_TEST "Enable unit test mode" OFF)
+option(PERF_TEST "Enable performance test mode" OFF)
+
+if (UNIT_TEST)
+    set(LOG_LEVEL 0)
+    message(STATUS "UNIT_TEST mode → LOG_LEVEL=0 (silent)")
+elseif (PERF_TEST)
+    set(LOG_LEVEL 0)
+    message(STATUS "PERF_TEST mode → LOG_LEVEL=0 (silent)")
+else()
+    set(LOG_LEVEL 3 CACHE STRING "Log verbosity level (0..4)" FORCE)
+    message(STATUS "NORMAL mode → LOG_LEVEL=${LOG_LEVEL}")
+endif()
+
 
 add_compile_definitions(LOG_LEVEL=${LOG_LEVEL})
-message(STATUS "Build with LOG_LEVEL=${LOG_LEVEL}")
-
+if (UNIT_TEST)
+    add_compile_definitions(UNIT_TEST)
+endif()
+if (PERF_TEST)
+    add_compile_definitions(PERF_TEST)
+endif()
 
 add_subdirectory(src)
 add_subdirectory(tests)

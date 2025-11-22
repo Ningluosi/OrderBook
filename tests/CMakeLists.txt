@@ -24,7 +24,5 @@ target_link_libraries(orderbook_tests
         pthread
 )
 
-target_compile_definitions(orderbook_tests PRIVATE UNIT_TEST)
-
 include(GoogleTest)
 gtest_discover_tests(orderbook_tests)
