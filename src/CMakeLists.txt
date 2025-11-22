@@ -6,11 +6,11 @@ add_subdirectory(utils)
 
 add_executable(matchengine_main main.cpp)
 target_link_libraries(matchengine_main
-    matchengine_core
-    matchengine_engine
-    matchengine_dispatch
-    matchengine_engine
-    matchengine_net
-    matchengine_utils
+    core
+    engine
+    dispatch
+    engine
+    net
+    utils
     pthread
 )

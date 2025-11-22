@@ -5,24 +5,24 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/googletest googletest_build)
 
 file(GLOB TEST_SRC *.cpp)
 
-add_executable(orderbook_tests ${TEST_SRC})
+add_executable(matchingengine_test ${TEST_SRC})
 
-target_include_directories(orderbook_tests PRIVATE
+target_include_directories(matchingengine_test PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/third_party/googletest/googletest/include
 )
 
-target_link_libraries(orderbook_tests
+target_link_libraries(matchingengine_test
     PRIVATE
         gtest
         gtest_main
-        matchengine_core
-        matchengine_engine
-        matchengine_dispatch
-        matchengine_net
-        matchengine_utils
+        core
+        engine
+        dispatch
+        net
+        utils
         pthread
 )
 
 include(GoogleTest)
-gtest_discover_tests(orderbook_tests)
+gtest_discover_tests(matchingengine_test)
