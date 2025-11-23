@@ -3,7 +3,7 @@
 #include <atomic>
 #include <thread>
 #include <functional>
-#include "utils/lockfree_queue.h"
+#include "utils/lock_free_queue.h"
 #include "core/order.h"
 #include "dispatch/dispatch_msg.h"
 #include "engine/matching_engine.h"

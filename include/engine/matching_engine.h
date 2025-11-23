@@ -4,15 +4,18 @@
 #include <thread>
 #include <atomic>
 #include <functional>
+#include <boost/lockfree/spsc_queue.hpp>
 #include "core/order_book.h"
 #include "dispatch/dispatch_msg.h"
-#include "utils/lockfree_queue.h"
+#include "utils/lock_free_queue.h"
 #include "utils/logger.h"
 
 namespace engine {
 
 class MatchingEngine {
 public:
+    static constexpr size_t LAT_BUF = 1 << 20;
+
     explicit MatchingEngine(size_t inboundCap = 4096,
                             size_t outboundCap = 4096)
         : inboundQueue_(inboundCap),
@@ -31,7 +34,10 @@ public:
     void handleOrderMessage(dispatch::DispatchMsg&& msg);
     void setOutboundCallback(std::function<void()> cb);
 
+    void recordLatency(uint64_t ns);
+    std::vector<uint64_t> collectLatency() const;
     std::atomic<uint64_t> inboundProcessed_{0};
+
 private:
     void matchingLoop();
     void handleNewOrder(const dispatch::DispatchMsg& msg, core::OrderBook& ob);
@@ -44,6 +50,7 @@ private:
     std::function<void()> outboundReadyCallback_;
     std::thread matchingThread_;
     std::atomic<bool> running_{false};
+    mutable boost::lockfree::spsc_queue< uint64_t, boost::lockfree::capacity<LAT_BUF>> latencyQueue_;
 };
 
 }

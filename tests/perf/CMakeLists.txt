@@ -1,8 +1,8 @@
-add_executable(perf_tps_engine
-    perf_tps_engine.cpp
+add_executable(perf_engine_benchmark
+    perf_engine_benchmark.cpp
 )
 
-target_link_libraries(perf_tps_engine
+target_link_libraries(perf_engine_benchmark
     PRIVATE
         core
         engine
@@ -12,6 +12,6 @@ target_link_libraries(perf_tps_engine
         pthread
 )
 
-target_compile_definitions(perf_tps_engine PRIVATE PERF_TEST)
+target_compile_definitions(perf_engine_benchmark PRIVATE PERF_TEST)
 
 

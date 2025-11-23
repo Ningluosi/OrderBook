@@ -2,7 +2,7 @@
 #include <thread>
 #include <vector>
 #include <atomic>
-#include "utils/lockfree_queue.h"
+#include "utils/lock_free_queue.h"
 
 using namespace utils;
 

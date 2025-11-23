@@ -2,6 +2,8 @@
 #include <iostream>
 #include <random>
 #include <thread>
+#include <vector>
+#include <algorithm>
 #include "engine/matching_engine.h"
 #include "dispatch/dispatch_msg.h"
 #include "core/order.h"
@@ -36,6 +38,13 @@ dispatch::DispatchMsg makeCancelOrder(const std::string& sym, uint64_t orderId) 
     return m;
 }
 
+uint64_t pickQ(const std::vector<uint64_t>& v, double q) {
+    if (v.empty()) return 0;
+    size_t idx = v.size() * q;
+    if (idx >= v.size()) idx = v.size() - 1;
+    return v[idx];
+}
+
 int main() {
     const int SYMBOLS = 4;
     const std::string syms[SYMBOLS] = {"MAOTAI", "PINGAN", "ICBC", "TSLA"};
@@ -49,7 +58,7 @@ int main() {
         engines.push_back(eng);
     }
 
-    std::cout << "Running Real Engine TPS test...\n";
+    std::cout << "Running Engine Benchmark (TPS + Backlog + Latency)...\n";
 
     std::mt19937 rng(12345);
     std::uniform_int_distribution<int> sid(0, SYMBOLS - 1);
@@ -62,8 +71,10 @@ int main() {
     uint64_t pushCount = 0;
 
     uint64_t startPopSum = 0;
+    std::vector<uint64_t> startPopEach(SYMBOLS);
     for (int i = 0; i < SYMBOLS; ++i) {
-        startPopSum += engines[i]->inboundProcessed_.load(std::memory_order_relaxed);
+        startPopEach[i] = engines[i]->inboundProcessed_.load(std::memory_order_relaxed);
+        startPopSum += startPopEach[i];
     }
 
     auto start = steady_clock::now();
@@ -83,6 +94,7 @@ int main() {
 
             auto msg = makeNewOrder(sym, sd, price, qty);
             liveOrders.push_back(msg.orderId);
+
             eng->pushInbound(std::move(msg));
         } else {
             if (!liveOrders.empty()) {
@@ -101,20 +113,61 @@ int main() {
     double secs = duration_cast<duration<double>>(end - start).count();
 
     uint64_t endPopSum = 0;
+    std::vector<uint64_t> endPopEach(SYMBOLS);
     for (int i = 0; i < SYMBOLS; ++i) {
-        endPopSum += engines[i]->inboundProcessed_.load(std::memory_order_relaxed);
+        endPopEach[i] = engines[i]->inboundProcessed_.load(std::memory_order_relaxed);
+        endPopSum += endPopEach[i];
     }
 
     uint64_t engineConsumed = endPopSum - startPopSum;
+    int64_t backlog = (int64_t)pushCount - (int64_t)engineConsumed;
 
-    std::cout << "[Info] Producer Push Duration = " << secs << " sec\n";
-    std::cout << "[Info] Producer Push Count    = " << pushCount << "\n";
-    std::cout << "[Producer TPS]               = " << static_cast<uint64_t>(pushCount / secs) << " ops/sec\n";
-    std::cout << "[REAL Engine TPS]            = " << static_cast<uint64_t>(engineConsumed / secs) << " ops/sec\n";
+    std::vector<uint64_t> globalLat;
 
+    std::cout << "\n===== Per-Engine Latency =====\n";
     for (int i = 0; i < SYMBOLS; ++i) {
-        uint64_t c = engines[i]->inboundProcessed_.load(std::memory_order_relaxed);
-        std::cout << "Engine[" << i << "] Total Processed = " << c << std::endl;
+        auto lat = engines[i]->collectLatency();
+        std::sort(lat.begin(), lat.end());
+
+        std::cout << "Engine[" << i << "] samples = " << lat.size() << "\n";
+
+        if (!lat.empty()) {
+            std::cout << "  p50  = " << pickQ(lat,0.50)  << " ns\n";
+            std::cout << "  p95  = " << pickQ(lat,0.95)  << " ns\n";
+            std::cout << "  p99  = " << pickQ(lat,0.99)  << " ns\n";
+            std::cout << "  p999 = " << pickQ(lat,0.999) << " ns\n";
+            std::cout << "  max  = " << lat.back()       << " ns\n";
+        }
+
+        globalLat.insert(globalLat.end(), lat.begin(), lat.end());
+        std::cout << "\n";
+    }
+
+    std::sort(globalLat.begin(), globalLat.end());
+
+    std::cout << "\n===== Global Latency (Merged All Engines) =====\n";
+    std::cout << "Global samples = " << globalLat.size() << "\n";
+
+    if (!globalLat.empty()) {
+        std::cout << "  p50  = " << pickQ(globalLat,0.50)  << " ns\n";
+        std::cout << "  p95  = " << pickQ(globalLat,0.95)  << " ns\n";
+        std::cout << "  p99  = " << pickQ(globalLat,0.99)  << " ns\n";
+        std::cout << "  p999 = " << pickQ(globalLat,0.999) << " ns\n";
+        std::cout << "  max  = " << globalLat.back()       << " ns\n";
+    }
+
+    std::cout << "\n===== TPS / Backlog =====\n";
+    std::cout << "[Producer Push Duration] = " << secs << " sec\n";
+    std::cout << "[Producer Push Count]    = " << pushCount << "\n";
+    std::cout << "[Producer TPS]           = " << (uint64_t)(pushCount / secs) << "\n";
+    std::cout << "[REAL Engine TPS]        = " << (uint64_t)(engineConsumed / secs) << "\n";
+    std::cout << "[Backlog]                = " << backlog << " msgs\n";
+
+    std::cout << "\n--- Per-Engine TPS ---\n";
+    for (int i = 0; i < SYMBOLS; ++i) {
+        double tps = (endPopEach[i] - startPopEach[i]) / secs;
+        std::cout << "Engine[" << i << "] = " << tps 
+                  << " (total " << endPopEach[i] << ")\n";
     }
 
     return 0;

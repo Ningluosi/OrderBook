@@ -1,5 +1,7 @@
 #include "engine/matching_engine.h"
+#include <chrono>
 
+using namespace std::chrono;
 using namespace utils;
 using namespace dispatch;
 
@@ -44,8 +46,14 @@ void MatchingEngine::matchingLoop() {
         bool progressed = false;
         while (inboundQueue_.pop(msg)) {
             inboundProcessed_.fetch_add(1, std::memory_order_relaxed);
+            auto t0 = steady_clock::now();
             progressed = true;
+
             handleOrderMessage(std::move(msg));
+
+            auto t1 = steady_clock::now();
+            uint64_t ns = duration_cast<nanoseconds>(t1 - t0).count();
+            recordLatency(ns);
         }
 
         if (!progressed) {
@@ -173,6 +181,21 @@ bool MatchingEngine::pushOutbound(const dispatch::DispatchMsg&& msg) {
     bool ok = outboundQueue_.push(std::move(msg));
     if (ok && outboundReadyCallback_) outboundReadyCallback_();
     return ok;
+}
+
+void MatchingEngine::recordLatency(uint64_t ns) {
+    latencyQueue_.push(ns);
+}
+
+std::vector<uint64_t> MatchingEngine::collectLatency() const {
+    std::vector<uint64_t> out;
+    out.reserve(LAT_BUF);
+
+    uint64_t v;
+    while (latencyQueue_.pop(v)) {
+        out.push_back(v);
+    }
+    return out;
 }
 
 }
