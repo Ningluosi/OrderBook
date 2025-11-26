@@ -52,6 +52,7 @@ struct ProducerArgs {
     vector<engine::MatchingEngine*>* engines;
     const string* syms;
     vector<uint64_t>* liveOrders;
+    std::mutex* liveOrdersMtx;
     atomic<uint64_t>* pushCounter;
 };
 
@@ -77,18 +78,26 @@ void producerThread(ProducerArgs args) {
             uint32_t qty = 1 + (rng() % 80);
 
             auto msg = makeNewOrder(sym, sd, price, qty);
-            args.liveOrders->push_back(msg.orderId);
-
+            {
+                std::lock_guard<std::mutex> lg(*args.liveOrdersMtx);
+                args.liveOrders->push_back(msg.orderId);
+            }
             eng->pushInbound(std::move(msg));
         }
         else {
-            if (!args.liveOrders->empty()) {
-                uint64_t oid = args.liveOrders->back();
-                args.liveOrders->pop_back();
-
+            uint64_t oid = 0;
+            {
+                std::lock_guard<std::mutex> lg(*args.liveOrdersMtx);
+                if (!args.liveOrders->empty()) {
+                    oid = args.liveOrders->back();
+                    args.liveOrders->pop_back();
+                }
+            }
+            if (oid) {
                 auto cancelMsg = makeCancelOrder(sym, oid);
                 eng->pushInbound(std::move(cancelMsg));
             }
+
         }
 
         args.pushCounter->fetch_add(1, std::memory_order_relaxed);
@@ -113,6 +122,7 @@ int main() {
 
     vector<uint64_t> liveOrders;
     liveOrders.reserve(1'000'000);
+    mutex liveOrdersMtx;
 
     const int PRODUCER_THREADS = std::thread::hardware_concurrency() / 2;
     cout << "Using " << PRODUCER_THREADS << " producer threads...\n";
@@ -124,7 +134,7 @@ int main() {
     threads.reserve(PRODUCER_THREADS);
 
     for (int t = 0; t < PRODUCER_THREADS; t++) {
-        ProducerArgs args{t, &running, &engines, syms, &liveOrders, &pushCount};
+        ProducerArgs args{t, &running, &engines, syms, &liveOrders, &liveOrdersMtx, &pushCount};
         threads.emplace_back(producerThread, args);
     }
 
