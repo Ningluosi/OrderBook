@@ -30,11 +30,11 @@ void MatchingEngine::stopEngine() {
 }
 
 bool MatchingEngine::pushInbound(DispatchMsg&& msg) {
-    return inboundQueue_.push(std::move(msg));
+    return inboundQueue_.try_enqueue(std::move(msg));
 }
 
 bool MatchingEngine::popOutbound(DispatchMsg& out) {
-    return outboundQueue_.pop(out);
+    return outboundQueue_.try_dequeue(out);
 }
 
 void MatchingEngine::matchingLoop() {
@@ -44,7 +44,7 @@ void MatchingEngine::matchingLoop() {
 
     while (running_) {
         bool progressed = false;
-        while (inboundQueue_.pop(msg)) {
+        while (inboundQueue_.try_dequeue(msg)) {
             inboundProcessed_.fetch_add(1, std::memory_order_relaxed);
             auto t0 = steady_clock::now();
             progressed = true;
@@ -178,7 +178,7 @@ void MatchingEngine::setOutboundCallback(std::function<void()> cb) {
 }
 
 bool MatchingEngine::pushOutbound(const dispatch::DispatchMsg&& msg) {
-    bool ok = outboundQueue_.push(std::move(msg));
+    bool ok = outboundQueue_.try_enqueue(std::move(msg));
     if (ok && outboundReadyCallback_) outboundReadyCallback_();
     return ok;
 }

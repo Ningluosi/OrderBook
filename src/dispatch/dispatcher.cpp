@@ -25,7 +25,7 @@ bool Dispatcher::routeInbound(DispatchMsg&& msg) {
 
 void Dispatcher::attachEngine(engine::MatchingEngine* engine) {
     engine->setOutboundCallback([this, engine]() {
-        readyEngines_.push(engine);
+        readyEngines_.try_enqueue(engine);
     });
     LOG_INFO("[Dispatcher] Registered outbound callback for engine");
 }
@@ -47,7 +47,7 @@ void Dispatcher::dispatchLoop() {
     int idleSpins = 0;
     while (running_) {
         bool progressed = false;
-        while (readyEngines_.pop(eng)) {
+        while (readyEngines_.try_dequeue(eng)) {
             progressed = true;
             processOutbound(*eng);
         }

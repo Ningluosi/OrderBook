@@ -3,7 +3,7 @@
 #include <atomic>
 #include <thread>
 #include <functional>
-#include "utils/lock_free_queue.h"
+#include "concurrentqueue/concurrentqueue.h"
 #include "core/order.h"
 #include "dispatch/dispatch_msg.h"
 #include "engine/matching_engine.h"
@@ -34,7 +34,7 @@ private:
     void processOutbound(engine::MatchingEngine& eng);
 
 private:
-    utils::LockFreeQueue<engine::MatchingEngine*> readyEngines_;
+    moodycamel::ConcurrentQueue<engine::MatchingEngine*> readyEngines_;
     std::thread loopThread_;
     std::atomic<bool> running_{false};
     SendFunc sender_;

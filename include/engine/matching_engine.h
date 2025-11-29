@@ -7,7 +7,7 @@
 #include <boost/lockfree/spsc_queue.hpp>
 #include "core/order_book.h"
 #include "dispatch/dispatch_msg.h"
-#include "utils/lock_free_queue.h"
+#include "concurrentqueue/concurrentqueue.h"
 #include "utils/logger.h"
 
 namespace engine {
@@ -45,8 +45,8 @@ private:
 
 private:
     std::unordered_map<std::string, core::OrderBook> orderBooks_;
-    utils::LockFreeQueue<dispatch::DispatchMsg> inboundQueue_;
-    utils::LockFreeQueue<dispatch::DispatchMsg> outboundQueue_;
+    moodycamel::ConcurrentQueue<dispatch::DispatchMsg> inboundQueue_;
+    moodycamel::ConcurrentQueue<dispatch::DispatchMsg> outboundQueue_;
     std::function<void()> outboundReadyCallback_;
     std::thread matchingThread_;
     std::atomic<bool> running_{false};
