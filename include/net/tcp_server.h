@@ -24,10 +24,10 @@ public:
     TcpConnection* getConnection (int fd);
     const TcpConnection* getConnection (int fd) const;
 
-private:
+protected:
     bool startListening();
-    void handleAccept(int listenFd, uint32_t events);
-    void handleRead(int connFd, uint32_t events);
+    virtual void handleAccept(int listenFd, uint32_t events);
+    virtual void handleRead(int connFd, uint32_t events);
 
 private:
     EpollReactor& reactor_;
