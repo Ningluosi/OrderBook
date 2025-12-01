@@ -96,10 +96,10 @@ int main() {
     auto* engine = new MatchingEngine();
 
     engine->registerSymbol("AAPL",    100000);
-    engine->registerSymbol("BTCUSDT", 100000);
+    engine->registerSymbol("TESLA", 100000);
 
     EngineRouter::instance().bindSymbolToEngine("AAPL",    engine);
-    EngineRouter::instance().bindSymbolToEngine("BTCUSDT", engine);
+    EngineRouter::instance().bindSymbolToEngine("TESLA", engine);
 
     engine->startEngine();
     dispatcher.attachEngine(engine);

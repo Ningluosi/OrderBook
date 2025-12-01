@@ -1,8 +1,8 @@
-add_executable(perf_engine_benchmark
-    perf_engine_benchmark.cpp
+add_executable(perf_engine_throughput_latency
+    perf_engine_throughput_latency.cpp
 )
 
-target_link_libraries(perf_engine_benchmark
+target_link_libraries(perf_engine_throughput_latency
     PRIVATE
         core
         engine
@@ -12,7 +12,7 @@ target_link_libraries(perf_engine_benchmark
         pthread
 )
 
-target_compile_definitions(perf_engine_benchmark PRIVATE PERF_TEST)
+target_compile_definitions(perf_engine_throughput_latency PRIVATE PERF_TEST)
 
 
 add_executable(perf_gateway_tps
